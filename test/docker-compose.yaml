@@ -1,0 +1,48 @@
+version: "3.0"
+services:
+  node1:
+    container_name: hit-node1
+    image: hit
+    hostname: hit-node1
+    environment:
+      - HIT_API=1
+      - HIT_ADDR=http://hit-node1:8001
+      - HIT_GROUPS=default,tmp
+      - HIT_PEER_ADDRS=http://hit-node1:8001,http://hit-node2:8001,http://hit-node3:8001
+    networks:
+      - hit_net
+  node2:
+      container_name: hit-node2
+      image: hit
+      hostname: hit-node2
+      environment:
+        - HIT_API=1
+        - HIT_ADDR=http://hit-node2:8001
+        - HIT_GROUPS=default,tmp
+        - HIT_PEER_ADDRS=http://hit-node1:8001,http://hit-node2:8001,http://hit-node3:8001
+      networks:
+        - hit_net
+  node3:
+    container_name: hit-node3
+    image: hit
+    hostname: hit-node3
+    environment:
+      - HIT_API=1
+      - HIT_ADDR=http://hit-node3:8001
+      - HIT_GROUPS=default,tmp
+      - HIT_PEER_ADDRS=http://hit-node1:8001,http://hit-node2:8001,http://hit-node3:8001
+    networks:
+      - hit_net
+  ngnix:
+    container_name: hit-nginx
+    image: nginx
+    hostname: hit-nginx
+    volumes:
+    - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+    - 80:80
+    networks:
+      - hit_net
+networks:
+  hit_net:
+    driver: bridge
