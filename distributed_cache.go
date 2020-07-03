@@ -53,19 +53,7 @@ var (
 
 // NewGroup create a new instance of Loader
 func NewGroupDefault(name string, cacheBytes int64, getter Getter) *Group {
-	if getter == nil {
-		panic("nil Getter")
-	}
-	mu.Lock()
-	defer mu.Unlock()
-	g := &Group{
-		name:      name,
-		getter:    getter,
-		mainCache: NewSyncCacheDefault(cacheBytes),
-		loader:    &remote.Loader{},
-	}
-	groups[name] = g
-	return g
+	return NewGroup(name, NewSyncCacheDefault(cacheBytes), getter)
 }
 
 func NewGroup(name string, mainCache *SyncCache, getter Getter) *Group {
