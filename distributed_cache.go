@@ -129,7 +129,7 @@ func (g *Group) getFromPeer(peer remote.PeerGetter, key string) (ReadBytes, erro
 	if err != nil {
 		return ReadBytes{}, err
 	}
-	return out.Value, nil
+	return ReadBytes{b: out.Value}, nil
 }
 
 // getLocally 从本地获取数据(非缓存)
@@ -140,7 +140,7 @@ func (g *Group) getLocally(key string) (ReadBytes, error) {
 		return ReadBytes{}, err
 
 	}
-	value := ReadBytes(cloneBytes(bytes))
+	value := ReadBytes{b: cloneBytes(bytes)}
 	g.populateCache(key, value)
 	return value, nil
 }

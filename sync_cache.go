@@ -33,9 +33,7 @@ func NewSyncCache(c cache.Cache) *SyncCache {
 	}
 }
 func NewSyncCacheDefault(cacheBytes int64) *SyncCache {
-	return &SyncCache{
-		c: lru.NewLRUCache(cacheBytes, nil),
-	}
+	return NewSyncCache(lru.NewLRUCache(cacheBytes, nil))
 }
 
 func (s *SyncCache) Add(key string, value cache.Value) {

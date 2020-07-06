@@ -16,18 +16,20 @@
 
 package hit
 
-type ReadBytes []byte
+type ReadBytes struct {
+	b []byte
+}
 
 func (v ReadBytes) Len() int {
-	return len(v)
+	return len(v.b)
 }
 
 func (v ReadBytes) ByteSlice() []byte {
-	return cloneBytes(v)
+	return cloneBytes(v.b)
 }
 
 func (v ReadBytes) String() string {
-	return string(v)
+	return string(v.b)
 }
 
 //
