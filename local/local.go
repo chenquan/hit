@@ -14,17 +14,4 @@
  *    limitations under the License.
  */
 
-package remote
-
-import pb "github.com/chenquan/hit/remote/remotecache"
-
-type PeerPicker interface {
-	PickPeer(key string) (peer PeerGetter, ok bool)
-}
-
-type PeerGetter interface {
-	Get(in *pb.Request, out *pb.Response) error
-}
-type httpGetter struct {
-	baseURL string
-}
+package local
