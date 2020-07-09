@@ -14,8 +14,11 @@
  *    limitations under the License.
  */
 
-package local
+package hbase
 
-type Local interface {
-	Get(key string) ([]byte, bool)
+type Hbase struct {
+}
+
+func (h Hbase) Get(key string) ([]byte, bool) {
+	panic("implement me")
 }
