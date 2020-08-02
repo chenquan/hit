@@ -17,5 +17,6 @@
 package local
 
 type Local interface {
-	Get(key string) ([]byte, bool)
+	Get(key string) ([]byte, error)
+	Put(key string, value []byte) error
 }

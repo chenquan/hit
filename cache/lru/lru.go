@@ -25,7 +25,7 @@ type entry struct {
 	key   string
 	value cache.Value
 }
-type LRUCache struct {
+type Cache struct {
 	maxBytes     int64                               // 最大内存
 	currentBytes int64                               // 当前内存
 	ll           *list.List                          // 缓存队列
@@ -34,8 +34,8 @@ type LRUCache struct {
 }
 
 // NewLRUCache 创建LRUCache
-func NewLRUCache(maxBytes int64, onEvicted func(string, cache.Value)) *LRUCache {
-	return &LRUCache{
+func NewLRUCache(maxBytes int64, onEvicted func(string, cache.Value)) *Cache {
+	return &Cache{
 		maxBytes:  maxBytes,
 		ll:        list.New(),
 		cache:     make(map[string]*list.Element),
@@ -44,12 +44,12 @@ func NewLRUCache(maxBytes int64, onEvicted func(string, cache.Value)) *LRUCache 
 }
 
 // Len 缓存列表的条数
-func (L *LRUCache) Len() int {
+func (L *Cache) Len() int {
 	return L.ll.Len()
 }
 
 // Add 添加一个值到缓存中
-func (L *LRUCache) Add(key string, value cache.Value) {
+func (L *Cache) Add(key string, value cache.Value) {
 	if ele, ok := L.cache[key]; ok {
 		L.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
@@ -66,7 +66,7 @@ func (L *LRUCache) Add(key string, value cache.Value) {
 }
 
 // Get 查找键的值
-func (L *LRUCache) Get(key string) (value cache.Value, ok bool) {
+func (L *Cache) Get(key string) (value cache.Value, ok bool) {
 	if ele, ok := L.cache[key]; ok {
 		L.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
@@ -76,7 +76,7 @@ func (L *LRUCache) Get(key string) (value cache.Value, ok bool) {
 }
 
 // RemoveOldest 删除旧的记录
-func (L *LRUCache) RemoveOldest() {
+func (L *Cache) RemoveOldest() {
 	ele := L.ll.Back()
 	if ele != nil {
 		L.ll.Remove(ele)

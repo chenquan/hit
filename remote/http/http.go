@@ -1,5 +1,5 @@
 /*
- *    Copyright  2020 Chen Quan
+ *    Copyright 2020 Chen Quan
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	bytes, err := proto.Marshal(&pb.Response{Value: view.ByteSlice()})
+	bytes, err := proto.Marshal(&pb.Response{Value: view.Bytes()})
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Write(bytes)
 }

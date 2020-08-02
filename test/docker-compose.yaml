@@ -12,16 +12,16 @@ services:
     networks:
       - hit_net
   node2:
-      container_name: hit-node2
-      image: hit
-      hostname: hit-node2
-      environment:
-        - HIT_API=1
-        - HIT_ADDR=http://hit-node2:8001
-        - HIT_GROUPS=default,tmp
-        - HIT_PEER_ADDRS=http://hit-node1:8001,http://hit-node2:8001,http://hit-node3:8001
-      networks:
-        - hit_net
+    container_name: hit-node2
+    image: hit
+    hostname: hit-node2
+    environment:
+      - HIT_API=1
+      - HIT_ADDR=http://hit-node2:8001
+      - HIT_GROUPS=default,tmp
+      - HIT_PEER_ADDRS=http://hit-node1:8001,http://hit-node2:8001,http://hit-node3:8001
+    networks:
+      - hit_net
   node3:
     container_name: hit-node3
     image: hit
@@ -38,9 +38,9 @@ services:
     image: nginx
     hostname: hit-nginx
     volumes:
-    - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
-    - 80:80
+      - 80:80
     networks:
       - hit_net
 networks:

@@ -24,7 +24,7 @@ func (v ReadBytes) Len() int {
 	return len(v.b)
 }
 
-func (v ReadBytes) ByteSlice() []byte {
+func (v ReadBytes) Bytes() []byte {
 	return cloneBytes(v.b)
 }
 

@@ -20,6 +20,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/chenquan/hit"
+	"github.com/chenquan/hit/cache"
+	"github.com/chenquan/hit/cache/lru"
+	"github.com/chenquan/hit/local/etcd"
 	remotehttp "github.com/chenquan/hit/remote/http"
 	"log"
 	"net/http"
@@ -82,6 +85,20 @@ func createNewGroupDefault(name string) *hit.Group {
 			return nil, fmt.Errorf("%s not exist", key)
 		}))
 }
+func createNewGroup(name string) *hit.Group {
+	return hit.NewGroup(name, hit.NewSyncCache(lru.NewLRUCache(2<<10, func(key string, value cache.Value) {
+		// 存入etcd
+		etcd.Client.Put(key, value.Bytes())
+	})), hit.GetterFunc(
+		func(key string) ([]byte, error) {
+			log.Println("[SlowDB] search key", key)
+
+			if v, ok := db.Get(key); ok {
+				return v, nil
+			}
+			return nil, fmt.Errorf("%s not exist", key)
+		}))
+}
 func startCacheServer(addr string, peerAddrs []string, groups []string) {
 
 	peers := remotehttp.NewHTTPPool(addr)
@@ -125,7 +142,7 @@ func startAPIServer(apiPort string) {
 					return
 				}
 				w.Header().Set("Content-Type", "application/octet-stream")
-				w.Write(view.ByteSlice())
+				_, _ = w.Write(view.Bytes())
 			}
 
 			// TODO 新增

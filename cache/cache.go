@@ -25,4 +25,5 @@ type Cache interface {
 //使用Len值计算需要多少字节
 type Value interface {
 	Len() int
+	Bytes() []byte
 }
