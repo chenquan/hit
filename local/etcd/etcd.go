@@ -67,7 +67,7 @@ func (e *etcd) Get(key string) ([]byte, error) {
 	if response, err := e.kv.Get(e.ctx, key); err != nil {
 		return nil, err
 	} else {
-		response.Kvs
+		fmt.Println(response)
 	}
 
 	panic("implement me")

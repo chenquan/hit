@@ -8669,7 +8669,7 @@ func (p *TNamespaceDescriptor) String() string {
 }
 
 // A TIOError exception signals that an error occurred communicating
-// to the HBase master or a HBase region server. Also used to return
+// to the HBase master or a HBase region register. Also used to return
 // more general HBase error conditions.
 //
 // Attributes:
@@ -9031,7 +9031,7 @@ type THBaseService interface {
 	//  - ScannerId: the Id of the Scanner to return rows from. This is an Id returned from the openScanner function.
 	//  - NumRows: number of rows to return
 	GetScannerRows(ctx context.Context, scannerId int32, numRows int32) (r []*TResult_, err error)
-	// Closes the scanner. Should be called to free server side resources timely.
+	// Closes the scanner. Should be called to free register side resources timely.
 	// Typically close once the scanner is not needed anymore, i.e. after looping
 	// over it to get all the required rows.
 	//
@@ -9637,7 +9637,7 @@ func (p *THBaseServiceClient) GetScannerRows(ctx context.Context, scannerId int3
 	return _result59.GetSuccess(), nil
 }
 
-// Closes the scanner. Should be called to free server side resources timely.
+// Closes the scanner. Should be called to free register side resources timely.
 // Typically close once the scanner is not needed anymore, i.e. after looping
 // over it to get all the required rows.
 //

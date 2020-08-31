@@ -55,7 +55,7 @@ func main() {
 	var peerAddrs []string
 	var groups []string
 
-	flag.StringVar(&addr, "addr", "http://localhost:8001", "Protoc server port")
+	flag.StringVar(&addr, "addr", "http://localhost:8001", "Protoc register port")
 	flag.StringVar(&apiPort, "apiPort", "9999", "Server api port")
 	flag.Var(newSliceValue([]string{"http://localhost:8001", "http://localhost:8002", "http://localhost:8003"}, &peerAddrs),
 		"peerAddrs",
@@ -63,7 +63,7 @@ func main() {
 	flag.Var(newSliceValue([]string{"default", "tmp"}, &groups),
 		"groups",
 		"Group cache names")
-	flag.BoolVar(&api, "api", true, "Start a api server?")
+	flag.BoolVar(&api, "api", true, "Start a api register?")
 	flag.Parse()
 	for _, name := range groups {
 		createNewGroupDefault(name)
@@ -111,7 +111,7 @@ func startCacheServer(addr string, peerAddrs []string, groups []string) {
 	log.Println("[Hit] running at", addr)
 	ports := strings.SplitN(addr, ":", 3)
 	if len(ports) != 3 {
-		log.Fatalln("[Hit] ERROR: cache server Addr", addr)
+		log.Fatalln("[Hit] ERROR: cache register Addr", addr)
 	}
 	log.Fatal(http.ListenAndServe(":"+ports[2], peers))
 }
@@ -151,7 +151,7 @@ func startAPIServer(apiPort string) {
 			}
 		}))
 
-	log.Println("[Hit] api server port is running at http://localhost:" + apiPort)
+	log.Println("[Hit] api register port is running at http://localhost:" + apiPort)
 
 	log.Fatal(http.ListenAndServe(":"+apiPort, nil))
 

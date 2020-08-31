@@ -136,7 +136,7 @@ func (h *httpGetter) Get(in *remotecache.Request, out *remotecache.Response) err
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("server returned: %v", res.Status)
+		return fmt.Errorf("register returned: %v", res.Status)
 	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
