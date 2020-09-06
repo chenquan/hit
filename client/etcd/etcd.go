@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/chenquan/hit/client"
+	"github.com/chenquan/hit/consistenthash"
 	"github.com/chenquan/hit/internal/logging"
+	"log"
 
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/etcd-io/etcd/clientv3"
@@ -34,14 +36,23 @@ const DefaultPath = "hit/"
 
 var Client etcd
 
+type Config struct {
+	Endpoints []string `json:"endpoints"` // etcd服务节点
+	Replicas  int      `json:"replicas"`  // 虚拟节点个数
+}
+
 func Step(path string) {
-	var etcdConfig clientv3.Config
+
+	var config Config
 	if path == "" {
 		path = "etcd.toml"
 	}
-	if _, err := toml.DecodeFile(path, &etcdConfig); err != nil {
+	if _, err := toml.DecodeFile(path, &config); err != nil {
 		fmt.Println(err)
 		os.Exit(0)
+	}
+	var etcdConfig = clientv3.Config{
+		Endpoints: config.Endpoints,
 	}
 
 	cli, err := clientv3.New(etcdConfig)
@@ -50,7 +61,7 @@ func Step(path string) {
 		os.Exit(0)
 	}
 
-	Client = etcd{client: cli, nodes: make(map[string]string)}
+	Client = etcd{client: cli, nodes: make(map[string]string), peers: consistenthash.New(config.Replicas, nil)}
 }
 
 var _ client.Discovery = new(etcd)
@@ -58,8 +69,11 @@ var _ client.Discovery = new(etcd)
 type etcd struct {
 	client *clientv3.Client  // etcd客户端
 	nodes  map[string]string // 服务端节点
-	lock   sync.RWMutex      // 锁,用于
-	wg     sync.WaitGroup    // 锁,用于关闭etcd client
+	//consistenthash.Map
+	peers *consistenthash.Map
+
+	lock sync.RWMutex   // 锁,用于
+	wg   sync.WaitGroup // 锁,用于关闭etcd client
 }
 
 func (e *etcd) PullAllNodes() ([]string, error) {
@@ -128,7 +142,9 @@ func (e *etcd) putNode(name string, value string) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
+	e.peers.Add(value)
 	e.nodes[name] = value
+	log.Println("consistenthash", e.peers)
 	logging.LogAction("PUT", fmt.Sprintf("Node name:%s, addr:%s", name, value))
 }
 
@@ -141,7 +157,9 @@ func (e *etcd) delNode(name string) {
 
 	value, exist := e.nodes[name]
 	if exist {
+		e.peers.Del(value)
 		delete(e.nodes, name)
+		log.Println("consistenthash", e.peers)
 		logging.LogAction("DELETE", fmt.Sprintf("Node name:%s addr%s", name, value))
 	}
 

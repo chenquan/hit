@@ -1,3 +1,3 @@
 Endpoints=["101.132.38.180:2379"]
-#LeaseTtl=10
+Replicas=10
 #DialTimeout=5

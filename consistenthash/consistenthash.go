@@ -17,9 +17,11 @@
 package consistenthash
 
 import (
+	"fmt"
 	"hash/crc32"
 	"sort"
 	"strconv"
+	"sync"
 )
 
 // Hash 将字节映射到uint32
@@ -29,6 +31,11 @@ type Map struct {
 	replicas int
 	keys     []int // Sorted
 	hashMap  map[int]string
+	rwm      sync.RWMutex
+}
+
+func (m *Map) String() string {
+	return fmt.Sprint(m.hashMap)
 }
 
 // New creates a Map instance
@@ -46,6 +53,9 @@ func New(replicas int, fn Hash) *Map {
 
 // Add 添加一些键。
 func (m *Map) Add(keys ...string) {
+	// 写锁
+	m.rwm.Lock()
+	defer m.rwm.Unlock()
 	for _, key := range keys {
 		for i := 0; i < m.replicas; i++ {
 			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
@@ -56,8 +66,32 @@ func (m *Map) Add(keys ...string) {
 	sort.Ints(m.keys)
 }
 
+// Dle 删除一些键。
+func (m *Map) Del(keys ...string) {
+	// 写锁
+	m.rwm.Lock()
+	defer m.rwm.Unlock()
+	for _, key := range keys {
+		for i := 0; i < m.replicas; i++ {
+			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
+			// 删除hash
+			for index, keyHash := range m.keys {
+				if keyHash == hash {
+					m.keys = append(m.keys[:index], m.keys[index+1:]...)
+				}
+			}
+			delete(m.hashMap, hash)
+		}
+	}
+	sort.Ints(m.keys)
+}
+
 // Get 获取哈希中与提供的键最接近的项
 func (m *Map) Get(key string) string {
+	// 读锁
+	m.rwm.RLock()
+	defer m.rwm.RUnlock()
+
 	if len(m.keys) == 0 {
 		return ""
 	}

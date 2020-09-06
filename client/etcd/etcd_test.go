@@ -26,7 +26,7 @@ import (
 
 func TestStep(t *testing.T) {
 	Step("")
-	if nodes, err := Client.PullAllNodes(); err != nil {
+	if nodes, err := Client.PullNodes("node/a"); err != nil {
 		fmt.Println(err)
 	} else {
 		fmt.Println(nodes)

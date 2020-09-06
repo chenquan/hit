@@ -44,10 +44,10 @@ func TestHashing(t *testing.T) {
 		}
 	}
 
-	// Adds 8, 18, 28
+	// 删除 8, 18, 28
 	hash.Add("8")
 
-	// 27 should now map to 8.
+	// 27 对应 8.
 	testCases["27"] = "8"
 
 	for k, v := range testCases {
@@ -55,5 +55,14 @@ func TestHashing(t *testing.T) {
 			t.Errorf("Asking for %s, should have yielded %s", k, v)
 		}
 	}
+	// 删除 2, 12, 28
+	hash.Del("2")
+	testCases["2"] = "4"
+	testCases["11"] = "4"
 
+	for k, v := range testCases {
+		if hash.Get(k) != v {
+			t.Errorf("Asking for %s, should have yielded %s", k, v)
+		}
+	}
 }

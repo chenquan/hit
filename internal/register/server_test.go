@@ -30,7 +30,16 @@ func TestStep(t *testing.T) {
 	Step("")
 
 	async.Repeat(context.Background(), time.Second*5, func() {
-		err := Client.RegisterNode("node"+strconv.Itoa(rand.Int()), "http://localhost/"+strconv.Itoa(rand.Int()))
+		a := ""
+		if rand.Int()%2 == 0 {
+
+			a = "a/"
+		} else {
+			a = "b/"
+
+		}
+
+		err := Client.RegisterNode("node/"+a+strconv.Itoa(rand.Int()), "http://localhost/"+strconv.Itoa(rand.Int()))
 		if err != nil {
 			log.Println(err)
 		}
