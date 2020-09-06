@@ -21,24 +21,44 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/etcd-io/etcd/clientv3"
+	"log"
 	"os"
 	"time"
 )
 
+const DefaultPath = "hit/"
+
 // 注册
-type Register interface {
+type Config struct {
+	Endpoints   []string `json:"endpoints"`    // 节点列表
+	LeaseTtl    int64    `json:"lease_ttl"`    // 续租时间
+	DialTimeout int64    `json:"dial_timeout"` // 续租时间
 }
 
 var Client etcd
 
 func Step(path string) {
-	var etcdConfig clientv3.Config
+	var config Config
+
 	if path == "" {
 		path = "etcd.toml"
 	}
-	if _, err := toml.DecodeFile(path, &etcdConfig); err != nil {
+	if _, err := toml.DecodeFile(path, &config); err != nil {
 		fmt.Println(err)
 		os.Exit(0)
+	}
+
+	// 默认配置
+	if config.LeaseTtl == 0 {
+		config.LeaseTtl = 10
+	}
+	if config.DialTimeout == 0 {
+		config.DialTimeout = 5
+	}
+	// 配置etcd客户端
+	var etcdConfig = clientv3.Config{
+		Endpoints:   config.Endpoints,
+		DialTimeout: time.Duration(config.DialTimeout) * time.Second,
 	}
 
 	cli, err := clientv3.New(etcdConfig)
@@ -47,10 +67,11 @@ func Step(path string) {
 		os.Exit(0)
 	}
 	Client = etcd{client: cli}
-	if err := Client.setLease(10); err != nil {
+	if err := Client.setLease(config.LeaseTtl); err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
+	// 监听etcd租约
 	go Client.ListenLeaseRespChan()
 }
 
@@ -63,10 +84,10 @@ type etcd struct {
 }
 
 //设置租约
-func (e *etcd) setLease(timeNum int64) error {
+func (e *etcd) setLease(ttl int64) error {
 
 	//设置租约时间
-	leaseResp, err := e.client.Lease.Grant(context.TODO(), timeNum)
+	leaseResp, err := e.client.Lease.Grant(context.TODO(), ttl)
 	if err != nil {
 		return err
 	}
@@ -99,7 +120,9 @@ func (e *etcd) ListenLeaseRespChan() {
 	}
 }
 
-func (e *etcd) PutNode(name, addr string) error {
+func (e *etcd) RegisterNode(name, addr string) error {
+	name = DefaultPath + name
+	log.Println("注册:", name)
 	kv := clientv3.NewKV(e.client)
 	_, err := kv.Put(context.TODO(), name, addr, clientv3.WithLease(e.leaseResp.ID))
 	return err

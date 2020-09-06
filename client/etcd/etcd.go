@@ -30,7 +30,7 @@ import (
 	"sync"
 )
 
-const defaultPath = "hit/"
+const DefaultPath = "hit/"
 
 var Client etcd
 
@@ -72,7 +72,7 @@ func (e *etcd) PullNodes(prefix string) ([]string, error) {
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	prefix = defaultPath + prefix
+	prefix = DefaultPath + prefix
 	response, err := e.client.Get(context.Background(), prefix, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (e *etcd) delNode(name string) {
 
 	value, exist := e.nodes[name]
 	if exist {
-		delete(e.nodes, value)
+		delete(e.nodes, name)
 		logging.LogAction("DELETE", fmt.Sprintf("Node name:%s addr%s", name, value))
 	}
 
