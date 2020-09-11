@@ -103,7 +103,7 @@ func (p *HTTPPool) Set(peers ...string) {
 	}
 }
 
-// PickPeer picks a peer according to key
+// PickNode picks a peer according to key
 func (p *HTTPPool) PickPeer(key string) (remote.PeerGetter, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

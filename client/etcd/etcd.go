@@ -22,17 +22,15 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/chenquan/hit/client"
 	"github.com/chenquan/hit/consistenthash"
+	"github.com/chenquan/hit/internal/consts"
 	"github.com/chenquan/hit/internal/logging"
-	"log"
-
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/etcd-io/etcd/clientv3"
+	"log"
 
 	"os"
 	"sync"
 )
-
-const DefaultPath = "hit/"
 
 var Client etcd
 
@@ -61,19 +59,17 @@ func Step(path string) {
 		os.Exit(0)
 	}
 
-	Client = etcd{client: cli, nodes: make(map[string]string), peers: consistenthash.New(config.Replicas, nil)}
+	Client = etcd{client: cli, nodes: make(map[string]client.Nodor), peers: consistenthash.New(config.Replicas, nil)}
 }
 
-var _ client.Discovery = new(etcd)
+//var _ client.Discovery = new(etcd)
 
 type etcd struct {
-	client *clientv3.Client  // etcd客户端
-	nodes  map[string]string // 服务端节点
-	//consistenthash.Map
-	peers *consistenthash.Map
-
-	lock sync.RWMutex   // 锁,用于
-	wg   sync.WaitGroup // 锁,用于关闭etcd client
+	client *clientv3.Client        // etcd客户端
+	peers  *consistenthash.Map     // 存储哈希一致性数据
+	nodes  map[string]client.Nodor // key 节点名称,节点结构体
+	lock   sync.RWMutex            // 锁,用于
+	wg     sync.WaitGroup          // 锁,用于关闭etcd client
 }
 
 func (e *etcd) PullAllNodes() ([]string, error) {
@@ -86,7 +82,7 @@ func (e *etcd) PullNodes(prefix string) ([]string, error) {
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	prefix = DefaultPath + prefix
+	prefix = consts.DefaultPath + prefix
 	response, err := e.client.Get(context.Background(), prefix, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
@@ -136,16 +132,16 @@ func (e *etcd) watcher(prefix string) {
 }
 
 // putNode 更新节点
-func (e *etcd) putNode(name string, value string) {
+func (e *etcd) putNode(name string, addr string) {
 	e.wg.Add(1)
 	defer e.wg.Done()
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.peers.Add(value)
-	e.nodes[name] = value
+	e.nodes[name] = client.NewNode(addr)
+	e.peers.Add(name)
 	log.Println("consistenthash", e.peers)
-	logging.LogAction("PUT", fmt.Sprintf("Node name:%s, addr:%s", name, value))
+	logging.LogAction("PUT", fmt.Sprintf("Node name:%s, addr:%s", name, addr))
 }
 
 // delNode 删除节点
@@ -157,15 +153,35 @@ func (e *etcd) delNode(name string) {
 
 	value, exist := e.nodes[name]
 	if exist {
-		e.peers.Del(value)
+		e.peers.Del(name)
 		delete(e.nodes, name)
 		log.Println("consistenthash", e.peers)
 		logging.LogAction("DELETE", fmt.Sprintf("Node name:%s addr%s", name, value))
 	}
 
 }
-func (e *etcd) GetNodes() map[string]string {
+
+// 获取当前本地所以节点
+func (e *etcd) GetLocalAllNodes() map[string]client.Nodor {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 	return e.nodes
+}
+
+// 记录日志
+func (e *etcd) Log(format string, v ...interface{}) {
+	log.Printf("[Hit] %s.", fmt.Sprintf(format, v...))
+}
+
+// 为当前key选取一个合适的远程节点
+func (e *etcd) PickNode(key string) (client.Nodor, bool) {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	// 获取一个合适的节点
+	if nodeName := e.peers.Get(key); nodeName != "" {
+		peer := e.nodes[nodeName]
+		e.Log("Pick peer %s", peer.Url())
+		return peer, true
+	}
+	return nil, false
 }

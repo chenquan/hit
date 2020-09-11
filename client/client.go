@@ -16,6 +16,10 @@
 // 客户端
 package client
 
+import (
+	pb "github.com/chenquan/hit/internal/remotecache"
+)
+
 // Discovery 服务发现
 type Discovery interface {
 	// 拉取所有节点
@@ -27,11 +31,20 @@ type Discovery interface {
 	// 获取节点数据
 	GetNodes() map[string]string
 }
+type NodePicker interface {
+	PickNode(key string) (node Nodor, ok bool)
+}
 
-// 缓存机制
-type Hitor interface {
-	Get(key string) ([]byte, error)
-	Put(kye string, value []byte) error
-	SetName(name string)
-	Name() string
+type NodeGetter interface {
+	Get(in *pb.Request, out *pb.Response) error
+}
+type NodeSetter interface {
+	Set(in *pb.Request, out *pb.Response) error
+}
+
+// 节点
+type Nodor interface {
+	NodeGetter
+	NodeSetter
+	Url() string
 }

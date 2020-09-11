@@ -14,29 +14,4 @@
  *    limitations under the License.
  */
 
-package etcd
-
-import (
-	"context"
-	"fmt"
-	"github.com/chenquan/hit/internal/async"
-	"testing"
-	"time"
-)
-
-func TestStep(t *testing.T) {
-	Step("")
-	// 拉取指定节点
-	if nodes, err := Client.PullNodes("node/a"); err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(nodes)
-	}
-	async.Repeat(context.Background(), time.Second*10, func() {
-		nodes := Client.GetNodes()
-
-		fmt.Println(nodes)
-	})
-	select {}
-
-}
+package client

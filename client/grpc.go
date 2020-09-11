@@ -14,29 +14,17 @@
  *    limitations under the License.
  */
 
-package etcd
+package client
 
 import (
-	"context"
-	"fmt"
-	"github.com/chenquan/hit/internal/async"
-	"testing"
-	"time"
+	"sync"
 )
 
-func TestStep(t *testing.T) {
-	Step("")
-	// 拉取指定节点
-	if nodes, err := Client.PullNodes("node/a"); err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(nodes)
-	}
-	async.Repeat(context.Background(), time.Second*10, func() {
-		nodes := Client.GetNodes()
+type GRPC struct {
+	mu sync.Mutex // guards peers and httpGetters
+}
 
-		fmt.Println(nodes)
-	})
-	select {}
+func (g *GRPC) Log(format string, v ...interface{}) {
+	//log.Printf("[Hit] %s %s", g.self, fmt.Sprintf(format, v...))
 
 }

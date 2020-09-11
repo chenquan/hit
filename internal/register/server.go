@@ -20,19 +20,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"github.com/chenquan/hit/internal/consts"
 	"github.com/etcd-io/etcd/clientv3"
 	"log"
 	"os"
 	"time"
 )
 
-const DefaultPath = "hit/"
-
 // 注册
 type Config struct {
 	Endpoints   []string `json:"endpoints"`    // 节点列表
 	LeaseTtl    int64    `json:"lease_ttl"`    // 续租时间
-	DialTimeout int64    `json:"dial_timeout"` // 续租时间
+	DialTimeout int64    `json:"dial_timeout"` // 超时时间
 }
 
 var Client etcd
@@ -121,7 +120,7 @@ func (e *etcd) ListenLeaseRespChan() {
 }
 
 func (e *etcd) RegisterNode(name, addr string) error {
-	name = DefaultPath + name
+	name = consts.DefaultPath + name
 	log.Println("注册:", name)
 	kv := clientv3.NewKV(e.client)
 	_, err := kv.Put(context.TODO(), name, addr, clientv3.WithLease(e.leaseResp.ID))
