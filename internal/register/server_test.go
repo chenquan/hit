@@ -18,7 +18,7 @@ package register
 
 import (
 	"context"
-	"github.com/chenquan/hit/internal/async"
+	"github.com/chenquan/hit/internal/utils"
 	"log"
 	"math/rand"
 	"strconv"
@@ -29,7 +29,7 @@ import (
 func TestStep(t *testing.T) {
 	Step("")
 
-	async.Repeat(context.Background(), time.Second*5, func() {
+	utils.Repeat(context.Background(), time.Second*20, func() {
 		a := ""
 		if rand.Int()%2 == 0 {
 

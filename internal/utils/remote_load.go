@@ -14,4 +14,43 @@
  *    limitations under the License.
  */
 
-package client
+package utils
+
+import "sync"
+
+type call struct {
+	wg  sync.WaitGroup
+	val interface{}
+	err error
+}
+
+type Loader struct {
+	mu sync.Mutex // protects m
+	m  map[string]*call
+}
+
+func (l *Loader) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
+	l.mu.Lock()
+	if l.m == nil {
+		l.m = make(map[string]*call)
+	}
+	if c, ok := l.m[key]; ok {
+		l.mu.Unlock()
+		// 等待先入协程从远端获取数据
+		c.wg.Wait()
+		return c.val, c.err
+	}
+	c := new(call)
+	c.wg.Add(1)
+	l.m[key] = c
+	l.mu.Unlock()
+
+	c.val, c.err = fn()
+	c.wg.Done()
+
+	l.mu.Lock()
+	delete(l.m, key)
+	l.mu.Unlock()
+
+	return c.val, c.err
+}

@@ -18,23 +18,23 @@ package lru
 
 import (
 	"container/list"
-	"github.com/chenquan/hit/cache"
+	"github.com/chenquan/hit/internal/cache/backend/cache"
 )
 
 type entry struct {
 	key   string
-	value cache.Value
+	value cache.Valuer
 }
 type Cache struct {
-	maxBytes     int64                               // 最大内存
-	currentBytes int64                               // 当前内存
-	ll           *list.List                          // 缓存队列
-	cache        map[string]*list.Element            // 缓存字典
-	OnEvicted    func(key string, value cache.Value) // (可选)移除缓存中某条记录时执行
+	maxBytes     int64                                // 最大内存
+	currentBytes int64                                // 当前内存
+	ll           *list.List                           // 缓存队列
+	cache        map[string]*list.Element             // 缓存字典
+	OnEvicted    func(key string, value cache.Valuer) // (可选)移除缓存中某条记录时执行
 }
 
 // NewLRUCache 创建LRUCache
-func NewLRUCache(maxBytes int64, onEvicted func(string, cache.Value)) *Cache {
+func NewLRUCache(maxBytes int64, onEvicted func(string, cache.Valuer)) *Cache {
 	return &Cache{
 		maxBytes:  maxBytes,
 		ll:        list.New(),
@@ -49,7 +49,7 @@ func (L *Cache) Len() int {
 }
 
 // Add 添加一个值到缓存中
-func (L *Cache) Add(key string, value cache.Value) {
+func (L *Cache) Add(key string, value cache.Valuer) {
 	if ele, ok := L.cache[key]; ok {
 		L.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
@@ -66,7 +66,7 @@ func (L *Cache) Add(key string, value cache.Value) {
 }
 
 // Get 查找键的值
-func (L *Cache) Get(key string) (value cache.Value, ok bool) {
+func (L *Cache) Get(key string) (value cache.Valuer, ok bool) {
 	if ele, ok := L.cache[key]; ok {
 		L.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
@@ -87,4 +87,28 @@ func (L *Cache) RemoveOldest() {
 			L.OnEvicted(kv.key, kv.value)
 		}
 	}
+}
+
+type Value struct {
+	v []byte
+}
+
+func NewValue(v []byte) *Value {
+	return &Value{v: v}
+}
+
+func (v *Value) Len() int {
+	return len(v.v)
+}
+
+func (v *Value) Bytes() []byte {
+
+	return cloneBytes(v.v)
+}
+
+// cloneBytes 克隆字节码
+func cloneBytes(b []byte) []byte {
+	c := make([]byte, len(b))
+	copy(c, b)
+	return c
 }

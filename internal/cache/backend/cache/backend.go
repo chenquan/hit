@@ -14,27 +14,17 @@
  *    limitations under the License.
  */
 
-package hit
+package cache
 
-type ReadBytes struct {
-	b []byte
+type Cache interface {
+	Add(key string, valuer Valuer)
+	Get(key string) (valuer Valuer, ok bool)
+	Len() int
+	RemoveOldest()
 }
 
-func (v ReadBytes) Len() int {
-	return len(v.b)
-}
-
-func (v ReadBytes) Bytes() []byte {
-	return cloneBytes(v.b)
-}
-
-func (v ReadBytes) String() string {
-	return string(v.b)
-}
-
-//
-func cloneBytes(b []byte) []byte {
-	c := make([]byte, len(b))
-	copy(c, b)
-	return c
+//使用Len值计算需要多少字节
+type Valuer interface {
+	Len() int
+	Bytes() []byte
 }

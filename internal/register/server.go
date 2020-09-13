@@ -14,6 +14,8 @@
  *    limitations under the License.
  */
 
+// 注册服务
+
 package register
 
 import (

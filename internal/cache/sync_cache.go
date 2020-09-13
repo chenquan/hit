@@ -14,16 +14,16 @@
  *    limitations under the License.
  */
 
-package hit
+package cache
 
 import (
-	"github.com/chenquan/hit/cache"
-	"github.com/chenquan/hit/cache/lru"
+	"github.com/chenquan/hit/internal/cache/backend/cache"
+	"github.com/chenquan/hit/internal/cache/lru"
 	"sync"
 )
 
 type SyncCache struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 	c  cache.Cache
 }
 
@@ -36,19 +36,31 @@ func NewSyncCacheDefault(cacheBytes int64) *SyncCache {
 	return NewSyncCache(lru.NewLRUCache(cacheBytes, nil))
 }
 
-func (s *SyncCache) Add(key string, value cache.Value) {
+func (s *SyncCache) RemoveOldest() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.c.RemoveOldest()
+}
+
+func (s *SyncCache) Add(key string, value cache.Valuer) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.c.Add(key, value)
 }
 
-func (s *SyncCache) Get(key string) (value ReadBytes, ok bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *SyncCache) Get(key string) (value cache.Valuer, ok bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	if v, ok := s.c.Get(key); ok {
-		return v.(ReadBytes), ok
+		return v.(cache.Valuer), ok
 	}
 	return
+} // Len 缓存列表的条数
+func (s *SyncCache) Len() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.c.Len()
 }

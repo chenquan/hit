@@ -17,9 +17,12 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/chenquan/hit/internal/consts"
 	"github.com/chenquan/hit/internal/remotecache"
 	"github.com/golang/protobuf/proto"
+
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -34,22 +37,42 @@ func NewNode(url string) *Node {
 	return &Node{url: url}
 }
 
-func (h *Node) Set(in *remotecache.Request, out *remotecache.Response) error {
-	panic("implement me")
-}
-
-// 获取远程节点地址
-func (h *Node) Url() string {
-	return h.url
-}
-
-// 从远程节点获取数据
-func (h *Node) Get(in *remotecache.Request, out *remotecache.Response) error {
+func (h *Node) Set(in *remotecache.SetRequest, out *remotecache.SetResponse) error {
 	u := fmt.Sprintf(
-		"%v%v/%v",
+		"%v/%v/%v",
 		h.url,
 		url.QueryEscape(in.GetGroup()),
 		url.QueryEscape(in.GetKey()),
+	)
+
+	res, err := http.Post(u, consts.ContentType, bytes.NewBuffer(in.GetValue()))
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("register returned: %v", res.Status)
+	}
+
+	bytesData, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body: %v", err)
+	}
+	if err = proto.Unmarshal(bytesData, out); err != nil {
+		return fmt.Errorf("decoding response body: %v", err)
+	}
+	return nil
+}
+
+// 从远程节点获取数据
+func (h *Node) Get(in *remotecache.GetRequest, out *remotecache.GetResponse) error {
+
+	u := fmt.Sprintf(
+		"%v/%v/%v",
+		h.url,
+		url.QueryEscape(in.GetKey()),
+		url.QueryEscape(in.GetGroup()),
 	)
 	res, err := http.Get(u)
 	if err != nil {
@@ -61,12 +84,17 @@ func (h *Node) Get(in *remotecache.Request, out *remotecache.Response) error {
 		return fmt.Errorf("register returned: %v", res.Status)
 	}
 
-	bytes, err := ioutil.ReadAll(res.Body)
+	bytesData, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("reading response body: %v", err)
 	}
-	if err = proto.Unmarshal(bytes, out); err != nil {
+	if err = proto.Unmarshal(bytesData, out); err != nil {
 		return fmt.Errorf("decoding response body: %v", err)
 	}
 	return nil
+}
+
+// 获取远程节点地址
+func (h *Node) Url() string {
+	return h.url
 }

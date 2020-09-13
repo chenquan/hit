@@ -2,15 +2,29 @@ syntax = "proto3";
 
 package remotecache;
 
-message Request {
+// 获取缓存的请求体
+message GetRequest {
   string group = 1;
   string key = 2;
 }
-
-message Response {
+// 获取缓存的返回体
+message GetResponse {
   bytes value = 1;
 }
 
+message SetRequest {
+  string group = 1;
+  string key = 2;
+  bytes value = 3;
+}
+
+message SetResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+
 service GroupCache {
-  rpc Get(Request) returns (Response);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Set(SetRequest) returns (SetResponse);
 }

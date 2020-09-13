@@ -14,17 +14,19 @@
  *    limitations under the License.
  */
 
-package remote
+package utils
 
-import pb "github.com/chenquan/hit/remote/remotecache"
+import (
+	"testing"
+)
 
-type PeerPicker interface {
-	PickPeer(key string) (peer PeerGetter, ok bool)
-}
+func TestDo(t *testing.T) {
+	var g Loader
 
-type PeerGetter interface {
-	Get(in *pb.Request, out *pb.Response) error
-}
-type httpGetter struct {
-	baseURL string
+	v, err := g.Do("key", func() (interface{}, error) {
+		return "bar", nil
+	})
+	if v != "bar" || err != nil {
+		t.Errorf("Do v = %v, error = %v", v, err)
+	}
 }

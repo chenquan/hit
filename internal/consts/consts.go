@@ -17,4 +17,7 @@
 package consts
 
 // 默认路径
-const DefaultPath = "hit/"
+const (
+	DefaultPath = "hit/"
+	ContentType = "application/octet-stream"
+)

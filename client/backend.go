@@ -13,18 +13,38 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
+// 客户端
 package client
 
 import (
-	"sync"
+	pb "github.com/chenquan/hit/internal/remotecache"
 )
 
-type GRPC struct {
-	mu sync.Mutex // guards peers and httpGetters
+// Discovery 服务发现
+type Discovery interface {
+	// 拉取所有节点
+	PullAllNodes() ([]string, error)
+	// 拉取指定前戳节点
+	PullNodes(prefix string) ([]string, error)
+	// 关闭
+	Close()
+	// 获取节点数据
+	GetNodes() map[string]string
+}
+type NodePicker interface {
+	PickNode(key string) (node Nodor, ok bool)
 }
 
-func (g *GRPC) Log(format string, v ...interface{}) {
-	//log.Printf("[Hit] %s %s", g.self, fmt.Sprintf(format, v...))
+type NodeGetter interface {
+	Get(in *pb.GetRequest, out *pb.GetResponse) error
+}
+type NodeSetter interface {
+	Set(in *pb.SetRequest, out *pb.SetResponse) error
+}
 
+// 节点
+type Nodor interface {
+	NodeGetter
+	NodeSetter
+	Url() string
 }
