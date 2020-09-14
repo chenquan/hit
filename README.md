@@ -98,7 +98,7 @@ docker-compose部署:
 ```shell script
 cd hit
 docker build -t hit .
-cd test
+cd Atest
 docker-compose up -d
 ```
 测试(PostMan):

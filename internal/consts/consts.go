@@ -16,8 +16,12 @@
 
 package consts
 
+import "time"
+
 // 默认路径
 const (
-	DefaultPath = "hit/"
-	ContentType = "application/octet-stream"
+	DefaultPath               = "hit/"
+	ContentType               = "application/octet-stream"
+	DefaultLocalCacheDuration = time.Second      // 默认本地缓存时长
+	DefaultNodeCacheDuration  = time.Second * 60 // 默认节点缓存时长
 )

@@ -2,29 +2,50 @@ syntax = "proto3";
 
 package remotecache;
 
-// 获取缓存的请求体
+message Data{
+  string group = 1;
+  bytes value = 2;
+  int64 expire = 3;
+}
+
+// 获取缓存请求体
 message GetRequest {
   string group = 1;
   string key = 2;
 }
-// 获取缓存的返回体
+// 获取缓存返回体
 message GetResponse {
-  bytes value = 1;
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
 }
 
+// 新增请求体
 message SetRequest {
   string group = 1;
   string key = 2;
   bytes value = 3;
 }
-
+// 新增返回体
 message SetResponse {
+  bool success = 1;
+  string message = 2;
+  Data data = 3;
+}
+// 删除请求体
+message DelRequest {
+  string group = 1;
+  string key = 2;
+
+}
+// 删除返回体
+message DelResponse {
   bool success = 1;
   string message = 2;
 }
 
-
 service GroupCache {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Set(SetRequest) returns (SetResponse);
+  rpc Del(DelRequest) returns (DelResponse);
 }

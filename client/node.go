@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/chenquan/hit/internal/consts"
-	"github.com/chenquan/hit/internal/remotecache"
+	pb "github.com/chenquan/hit/internal/remotecache"
 	"github.com/golang/protobuf/proto"
 
 	"io/ioutil"
@@ -37,7 +37,7 @@ func NewNode(url string) *Node {
 	return &Node{url: url}
 }
 
-func (h *Node) Set(in *remotecache.SetRequest, out *remotecache.SetResponse) error {
+func (h *Node) Set(in *pb.SetRequest, out *pb.SetResponse) error {
 	u := fmt.Sprintf(
 		"%v/%v/%v",
 		h.url,
@@ -66,7 +66,7 @@ func (h *Node) Set(in *remotecache.SetRequest, out *remotecache.SetResponse) err
 }
 
 // 从远程节点获取数据
-func (h *Node) Get(in *remotecache.GetRequest, out *remotecache.GetResponse) error {
+func (h *Node) Get(in *pb.GetRequest, out *pb.GetResponse) error {
 
 	u := fmt.Sprintf(
 		"%v/%v/%v",
@@ -92,6 +92,33 @@ func (h *Node) Get(in *remotecache.GetRequest, out *remotecache.GetResponse) err
 		return fmt.Errorf("decoding response body: %v", err)
 	}
 	return nil
+}
+func (h *Node) Del(in *pb.DelRequest, out *pb.DelResponse) error {
+	_ = fmt.Sprintf(
+		"%v/%v/%v",
+		h.url,
+		url.QueryEscape(in.GetKey()),
+		url.QueryEscape(in.GetGroup()),
+	)
+	panic("implement")
+	//res, err := http.Del(u)
+	//if err != nil {
+	//	return err
+	//}
+	//defer res.Body.Close()
+	//
+	//if res.StatusCode != http.StatusOK {
+	//	return fmt.Errorf("register returned: %v", res.Status)
+	//}
+	//
+	//bytesData, err := ioutil.ReadAll(res.Body)
+	//if err != nil {
+	//	return fmt.Errorf("reading response body: %v", err)
+	//}
+	//if err = proto.Unmarshal(bytesData, out); err != nil {
+	//	return fmt.Errorf("decoding response body: %v", err)
+	//}
+	//return nil
 }
 
 // 获取远程节点地址

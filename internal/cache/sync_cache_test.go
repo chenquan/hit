@@ -29,6 +29,9 @@ func (s String) Bytes() []byte {
 func (s String) Len() int {
 	return len(s)
 }
+func (s String) Expire() int64 {
+	return 0
+}
 
 func TestGet(t *testing.T) {
 	lru := NewSyncCacheDefault(int64(0))

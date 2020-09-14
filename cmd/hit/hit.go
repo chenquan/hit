@@ -14,21 +14,8 @@
  *    limitations under the License.
  */
 
-package cache
+package main
 
-type Cache interface {
-	Add(key string, valuer Valuer)
-	Get(key string) (valuer Valuer, ok bool)
-	Remove(key string)
-	Clear()
-	Len() int
-}
+func main() {
 
-//使用Len值计算需要多少字节
-type Valuer interface {
-	Len() int
-	Bytes() []byte
-	Expire() int64
-	SetExpire(timestamp int64)
-	GroupName() string
 }

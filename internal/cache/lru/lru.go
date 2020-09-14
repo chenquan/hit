@@ -44,31 +44,42 @@ func NewLRUCache(maxBytes int64, onEvicted func(string, cache.Valuer)) *Cache {
 }
 
 // Len 缓存列表的条数
-func (L *Cache) Len() int {
-	return L.ll.Len()
+func (c *Cache) Len() int {
+	if c.cache == nil {
+		return 0
+	}
+	return c.ll.Len()
 }
 
 // Add 添加一个值到缓存中
-func (L *Cache) Add(key string, value cache.Valuer) {
-	if ele, ok := L.cache[key]; ok {
-		L.ll.MoveToFront(ele)
+func (c *Cache) Add(key string, value cache.Valuer) {
+	if c.cache == nil {
+		c.cache = make(map[string]*list.Element)
+		c.ll = list.New()
+	}
+
+	if ele, ok := c.cache[key]; ok {
+		c.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
-		L.currentBytes += int64(value.Len()) - int64(kv.value.Len())
+		c.currentBytes += int64(value.Len()) - int64(kv.value.Len())
 		kv.value = value
 	} else {
-		ele := L.ll.PushFront(&entry{key, value})
-		L.cache[key] = ele
-		L.currentBytes += int64(len(key)) + int64(value.Len())
+		ele := c.ll.PushFront(&entry{key, value})
+		c.cache[key] = ele
+		c.currentBytes += int64(len(key)) + int64(value.Len())
 	}
-	for L.maxBytes != 0 && L.maxBytes < L.currentBytes {
-		L.RemoveOldest()
+	for c.maxBytes != 0 && c.maxBytes < c.currentBytes {
+		c.removeOldest()
 	}
 }
 
 // Get 查找键的值
-func (L *Cache) Get(key string) (value cache.Valuer, ok bool) {
-	if ele, ok := L.cache[key]; ok {
-		L.ll.MoveToFront(ele)
+func (c *Cache) Get(key string) (value cache.Valuer, ok bool) {
+	if c.cache == nil {
+		return
+	}
+	if ele, ok := c.cache[key]; ok {
+		c.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
 		return kv.value, true
 	}
@@ -76,34 +87,87 @@ func (L *Cache) Get(key string) (value cache.Valuer, ok bool) {
 }
 
 // RemoveOldest 删除旧的记录
-func (L *Cache) RemoveOldest() {
-	ele := L.ll.Back()
+func (c *Cache) removeOldest() {
+	if c.cache == nil {
+		return
+	}
+	ele := c.ll.Back()
 	if ele != nil {
-		L.ll.Remove(ele)
+		c.ll.Remove(ele)
 		kv := ele.Value.(*entry)
-		delete(L.cache, kv.key)
-		L.currentBytes -= int64(len(kv.key)) + int64(kv.value.Len())
-		if L.OnEvicted != nil {
-			L.OnEvicted(kv.key, kv.value)
+		delete(c.cache, kv.key)
+		c.currentBytes -= int64(len(kv.key)) + int64(kv.value.Len())
+		if c.OnEvicted != nil {
+			c.OnEvicted(kv.key, kv.value)
 		}
 	}
 }
 
-type Value struct {
-	v []byte
+//
+func (c *Cache) removeElement(e *list.Element) {
+	if c.cache == nil {
+		return
+	}
+	c.ll.Remove(e)
+	kv := e.Value.(*entry)
+	delete(c.cache, kv.key)
+	c.currentBytes -= int64(len(kv.key)) + int64(kv.value.Len())
+	if c.OnEvicted != nil {
+		c.OnEvicted(kv.key, kv.value)
+	}
 }
 
-func NewValue(v []byte) *Value {
-	return &Value{v: v}
+// Remove 移除指定key的数据
+func (c *Cache) Remove(key string) {
+	if c.cache == nil {
+		return
+	}
+	if ele, hit := c.cache[key]; hit {
+		c.removeElement(ele)
+	}
+}
+
+// Clear 清空全部数据
+func (c *Cache) Clear() {
+	if c.cache == nil {
+		return
+	}
+	if c.OnEvicted != nil {
+		for _, e := range c.cache {
+			kv := e.Value.(*entry)
+			c.OnEvicted(kv.key, kv.value)
+		}
+	}
+	c.ll = nil
+	c.cache = nil
+}
+
+type Value struct {
+	data      []byte // 数据
+	expire    int64  // 数据到期时间戳
+	groupName string // 分组名称
+}
+
+func NewValue(data []byte, expire int64, groupName string) *Value {
+	return &Value{data: data, expire: expire, groupName: groupName}
 }
 
 func (v *Value) Len() int {
-	return len(v.v)
+	return len(v.data)
 }
 
 func (v *Value) Bytes() []byte {
 
-	return cloneBytes(v.v)
+	return cloneBytes(v.data)
+}
+func (v *Value) Expire() int64 {
+	return v.expire
+}
+func (v *Value) SetExpire(timestamp int64) {
+	v.expire = timestamp
+}
+func (v *Value) GroupName() string {
+	return v.groupName
 }
 
 // cloneBytes 克隆字节码

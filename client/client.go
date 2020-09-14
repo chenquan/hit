@@ -22,14 +22,16 @@ import (
 	"github.com/chenquan/hit/internal/cache"
 	cachebackend "github.com/chenquan/hit/internal/cache/backend/cache"
 	"github.com/chenquan/hit/internal/cache/lru"
+	"github.com/chenquan/hit/internal/consts"
 	pb "github.com/chenquan/hit/internal/remotecache"
 	"github.com/chenquan/hit/internal/utils"
+	"reflect"
+	"time"
 
 	"log"
 	"sync"
 )
 
-//  Loader 一个缓存名称空间，相关的数据加载分布
 type Group struct {
 	name      string
 	getter    Getter
@@ -103,24 +105,56 @@ func (g *Group) RegisterPeers(nodes NodePicker) {
 // Get 通过key获取value
 func (g *Group) Get(key string) (cachebackend.Valuer, error) {
 	if key == "" {
-		return &lru.Value{}, fmt.Errorf("key is required")
+		return nil, fmt.Errorf("key is required")
 	}
-	// 从本地缓存中获取数据
+	// 从本地缓存(一级缓存)中获取数据
 	if v, ok := g.mainCache.Get(key); ok {
-		log.Println("[Hit] hit", key)
-		return v, nil
+		// 检查数据是否过期
+		if v.Expire() <= time.Now().Unix() {
+			// 过期删除
+			g.mainCache.Remove(key)
+		} else {
+			log.Println("[Hit] hit", key)
+			return v, nil
+		}
 	}
-	// 从非本地缓存中获取
+
+	// 从远程节点中获取
 	return g.load(key)
 }
 
-// load 当存在节点时,从节点获取数据,否则从本地获取数据
+func (g *Group) Set(key string, value cachebackend.Valuer) (newValue cachebackend.Valuer, err error) {
+	if key == "" {
+		return nil, fmt.Errorf("key is required")
+	}
+	// 写入本地缓存
+	newValue = reflect.New(reflect.ValueOf(value).Elem().Type()).Interface().(cachebackend.Valuer)
+	newValue.SetExpire(time.Now().Add(consts.DefaultLocalCacheDuration).Unix())
+	g.populateCache(key, newValue)
+
+	if g.nodes != nil {
+		// 存在节点时,从节点获取数据
+		if peer, ok := g.nodes.PickNode(key); ok {
+			if value, err = g.setFromNode(peer, key); err == nil {
+				return value, nil
+			}
+			log.Println("[Hit] Failed to get from peer", err)
+		}
+	}
+	return newValue, nil
+}
+
+// load 当存在节点时,从节点获取数据,否则从本地DB获取数据
 func (g *Group) load(key string) (value cachebackend.Valuer, err error) {
 	do, err := g.loader.Do(key, func() (interface{}, error) {
 		if g.nodes != nil {
 			// 存在节点时,从节点获取数据
 			if peer, ok := g.nodes.PickNode(key); ok {
 				if value, err = g.getFromNode(peer, key); err == nil {
+					// 克隆一个新值,存入本地(一级)缓存
+					newValue := reflect.New(reflect.ValueOf(value).Elem().Type()).Interface().(cachebackend.Valuer)
+					newValue.SetExpire(time.Now().Add(consts.DefaultLocalCacheDuration).Unix())
+					g.populateCache(key, newValue)
 					return value, nil
 				}
 				log.Println("[Hit] Failed to get from peer", err)
@@ -144,18 +178,41 @@ func (g *Group) getFromNode(peer NodeGetter, key string) (cachebackend.Valuer, e
 	if err != nil {
 		return &lru.Value{}, err
 	}
-	return lru.NewValue(out.Value), nil
+	return lru.NewValue(out.Data.Value, out.Data.Expire, out.Data.Group), nil
 }
 
-// getLocally 从本地非缓存
+// getFromPeer 从节点获取存储
+func (g *Group) setFromNode(peer NodeSetter, key string) (cachebackend.Valuer, error) {
+	// 从节点获取存储
+	in := &pb.SetRequest{Group: g.name, Key: key}
+	out := &pb.SetResponse{}
+	err := peer.Set(in, out)
+	if err != nil {
+		return nil, err
+	}
+	return lru.NewValue(out.Data.Value, out.Data.Expire, out.Data.Group), nil
+}
+
+// getFromPeer 从节点获取存储
+func (g *Group) delFromNode(peer NodeDeler, key string) error {
+	// 从节点获取存储
+	in := &pb.DelRequest{Group: g.name, Key: key}
+	out := &pb.DelResponse{}
+	err := peer.Del(in, out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// getLocally 从本地DB
 func (g *Group) getLocally(key string) (cachebackend.Valuer, error) {
-	// 从源数据中获取
+	// 从DB数据中获取
 	value, err := g.getter.Get(key)
 	if err != nil {
-		return &lru.Value{}, err
-
+		return nil, err
 	}
-	newValue := lru.NewValue(value)
+	newValue := lru.NewValue(value, time.Now().Add(consts.DefaultLocalCacheDuration).Unix(), g.name)
 	g.populateCache(key, newValue)
 	return newValue, nil
 }

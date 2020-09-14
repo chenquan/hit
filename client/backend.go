@@ -41,10 +41,14 @@ type NodeGetter interface {
 type NodeSetter interface {
 	Set(in *pb.SetRequest, out *pb.SetResponse) error
 }
+type NodeDeler interface {
+	Del(in *pb.DelRequest, out *pb.DelResponse) error
+}
 
 // 节点
 type Nodor interface {
 	NodeGetter
 	NodeSetter
+	NodeDeler
 	Url() string
 }

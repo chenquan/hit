@@ -14,21 +14,45 @@
  *    limitations under the License.
  */
 
-package cache
+package main
 
-type Cache interface {
-	Add(key string, valuer Valuer)
-	Get(key string) (valuer Valuer, ok bool)
-	Remove(key string)
-	Clear()
-	Len() int
+import (
+	"fmt"
+	"reflect"
+	"testing"
+)
+
+type Test interface {
+	Name() string
+	SetName(string)
+}
+type Atest struct {
+	value string
 }
 
-//使用Len值计算需要多少字节
-type Valuer interface {
-	Len() int
-	Bytes() []byte
-	Expire() int64
-	SetExpire(timestamp int64)
-	GroupName() string
+func (t *Atest) Name() string {
+	return t.value
+}
+func (t *Atest) SetName(value string) {
+	t.value = value
+}
+
+func Test1(t *testing.T) {
+	var test1 Test
+	test1 = &Atest{
+		value: "11",
+	}
+	fmt.Println(test1)
+	var test2 Test
+	tmp := test1.(*Atest)
+	tmp2 := *tmp
+	test2 = &tmp2
+	test2.SetName("222")
+
+	test3 := reflect.New(reflect.ValueOf(test1).Elem().Type()).Interface().(Test)
+	test3.SetName("333")
+	fmt.Println(test3)
+	fmt.Println(test2)
+	fmt.Println(test1)
+
 }

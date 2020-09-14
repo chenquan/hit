@@ -112,10 +112,10 @@ func (e *etcd) ListenLeaseRespChan() {
 		select {
 		case leaseKeepResp := <-e.keepAliveChan:
 			if leaseKeepResp == nil {
-				fmt.Printf("已经关闭续租功能\n")
+				fmt.Println("已经关闭续租功能")
 				return
 			} else {
-				fmt.Printf("续租成功\n")
+				fmt.Println("续租成功")
 			}
 		}
 	}
