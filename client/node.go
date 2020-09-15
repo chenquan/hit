@@ -22,7 +22,6 @@ import (
 	"github.com/chenquan/hit/internal/consts"
 	pb "github.com/chenquan/hit/internal/remotecache"
 	"github.com/golang/protobuf/proto"
-
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -94,31 +93,31 @@ func (h *Node) Get(in *pb.GetRequest, out *pb.GetResponse) error {
 	return nil
 }
 func (h *Node) Del(in *pb.DelRequest, out *pb.DelResponse) error {
-	_ = fmt.Sprintf(
+	u := fmt.Sprintf(
 		"%v/%v/%v",
 		h.url,
 		url.QueryEscape(in.GetKey()),
 		url.QueryEscape(in.GetGroup()),
 	)
-	panic("implement")
-	//res, err := http.Del(u)
-	//if err != nil {
-	//	return err
-	//}
-	//defer res.Body.Close()
-	//
-	//if res.StatusCode != http.StatusOK {
-	//	return fmt.Errorf("register returned: %v", res.Status)
-	//}
-	//
-	//bytesData, err := ioutil.ReadAll(res.Body)
-	//if err != nil {
-	//	return fmt.Errorf("reading response body: %v", err)
-	//}
-	//if err = proto.Unmarshal(bytesData, out); err != nil {
-	//	return fmt.Errorf("decoding response body: %v", err)
-	//}
-	//return nil
+	req, err := http.NewRequest(http.MethodDelete, u, nil)
+	if err != nil {
+		return err
+	}
+	rsp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer rsp.Body.Close()
+	bytesBody, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		return err
+	}
+	err = proto.Unmarshal(bytesBody, out)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
 
 // 获取远程节点地址

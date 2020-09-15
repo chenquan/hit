@@ -116,16 +116,15 @@ func (g *Group) populateCache(key string, value cachebackend.Valuer) {
 }
 
 type HTTPPool struct {
-	// this peer's base URL, e.g. "https://example.net:8000"
 	self      string
 	basePath  string
-	mu        sync.Mutex // guards peers and httpGetters
 	mainCache *cache.SyncCache
 }
 
 func NewHTTPPool(self string) *HTTPPool {
 	return &HTTPPool{
-		self: self,
+		self:     self,
+		basePath: consts.DefaultBasePath,
 	}
 }
 
@@ -151,56 +150,34 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		get(groupName, key, w, r)
-		fmt.Println("GET")
-		break
 	case http.MethodPost:
 		set(groupName, key, w, r)
-		fmt.Println("POST")
-		break
 	case http.MethodDelete:
-		del(w, r)
-		fmt.Println("DELETE")
-		break
-
+		del(groupName, key, w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	//// 获取
-	//group := p.mainCache.Get()
-	//if group == nil {
-	//	http.Error(w, "no such group: "+groupName, http.StatusNotFound)
-	//	return
-	//}
-	//
-	//view, err := group.Get(key)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//bytes, err := proto.Marshal(&pb.Response{Value: view.Bytes()})
-	//w.Header().Set("Content-Type", "application/octet-stream")
-	//w.Write(bytes)
-
 }
 func get(groupName string, key string, w http.ResponseWriter, r *http.Request) {
+
 	if group, ok := groups[groupName]; ok {
 		valuer, err := group.Get(key)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err == nil {
+			data := &pb.Data{
+				Group:  groupName,
+				Value:  valuer.Bytes(),
+				Expire: valuer.Expire(),
+			}
+			bytes, _ := proto.Marshal(&pb.GetResponse{Success: true, Message: "success", Data: data})
+			w.Header().Set("Content-Type", "application/octet-stream")
+			_, _ = w.Write(bytes)
 			return
 		}
-		data := &pb.Data{
-			Group:  groupName,
-			Value:  valuer.Bytes(),
-			Expire: valuer.Expire(),
-		}
-		bytes, err := proto.Marshal(&pb.GetResponse{Success: true, Message: "success", Data: data})
-		w.Header().Set("Content-Type", "application/octet-stream")
-		_, _ = w.Write(bytes)
-	} else {
-		bytes, _ := proto.Marshal(&pb.GetResponse{Success: false, Message: "fail"})
-		w.Header().Set("Content-Type", "application/octet-stream")
-		_, _ = w.Write(bytes)
+
 	}
+	bytes, _ := proto.Marshal(&pb.GetResponse{Success: false, Message: "fail"})
+	w.Header().Set("Content-Type", "application/octet-stream")
+	_, _ = w.Write(bytes)
 
 }
 func set(groupName string, key string, w http.ResponseWriter, r *http.Request) {
@@ -235,31 +212,20 @@ func set(groupName string, key string, w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(bytes)
 
 }
-func del(w http.ResponseWriter, r *http.Request) {
+func del(groupName string, key string, w http.ResponseWriter, r *http.Request) {
+	message := "fail"
+	success := false
+	if group, ok := groups[groupName]; ok {
+		err := group.Delete(key)
+		if err != nil {
+		} else {
+			success = true
+			message = "success"
+		}
+
+	}
+	bytes, _ := proto.Marshal(&pb.DelResponse{Success: success, Message: message})
+	w.Header().Set("Content-Type", "application/octet-stream")
+	_, _ = w.Write(bytes)
 
 }
-
-//// Set 更新PeerPool列表
-//func (p *HTTPPool) Set(peers ...string) {
-//	p.mu.Lock()
-//	defer p.mu.Unlock()
-//	p.peers = consistenthash.New(defaultReplicas, nil)
-//	p.peers.Add(peers...)
-//	p.httpGetters = make(map[string]*httpGetter, len(peers))
-//	for _, peer := range peers {
-//		// 远程节点
-//		p.httpGetters[peer] = &httpGetter{url: peer + p.basePath}
-//	}
-//}
-//
-//// PickPeer picks a peer according to key
-//func (p *HTTPPool) PickPeer(key string) (remote.PeerGetter, bool) {
-//	p.mu.Lock()
-//	defer p.mu.Unlock()
-//	// 获取一个合适的节点
-//	if peer := p.peers.Get(key); peer != "" && peer != p.self {
-//		p.Log("Pick peer %s", peer)
-//		return p.httpGetters[peer], true
-//	}
-//	return nil, false
-//}

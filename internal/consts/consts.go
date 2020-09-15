@@ -24,4 +24,5 @@ const (
 	ContentType               = "application/octet-stream"
 	DefaultLocalCacheDuration = time.Second      // 默认本地缓存时长
 	DefaultNodeCacheDuration  = time.Second * 60 // 默认节点缓存时长
+	DefaultBasePath           = "hit/"           // 默认基础URL路径
 )
