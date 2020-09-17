@@ -27,7 +27,7 @@ import (
 	"time"
 )
 
-func BenchmarkSet(b *testing.B) {
+func BenchmarkSetAndLocal(b *testing.B) {
 	var f GetterFunc = func(string2 string) ([]byte, error) {
 
 		return []byte("not found"), nil
@@ -43,7 +43,7 @@ func BenchmarkSet(b *testing.B) {
 		//_, _ = groupDefault.Get("chenquan" + index)
 	}
 }
-func BenchmarkGet(b *testing.B) {
+func BenchmarkSet(b *testing.B) {
 	var f GetterFunc = func(string2 string) ([]byte, error) {
 
 		return []byte("not found"), nil
