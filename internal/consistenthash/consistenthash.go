@@ -77,7 +77,11 @@ func (m *Map) Del(keys ...string) {
 			// 删除hash
 			for index, keyHash := range m.keys {
 				if keyHash == hash {
-					m.keys = append(m.keys[:index], m.keys[index+1:]...)
+					if len(m.keys) > 1 {
+						m.keys = append(m.keys[:index], m.keys[index+1:]...)
+					} else {
+						m.keys = m.keys[:0]
+					}
 				}
 			}
 			delete(m.hashMap, hash)

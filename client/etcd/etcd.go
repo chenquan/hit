@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/chenquan/hit/client"
+	"github.com/chenquan/hit/client/backend"
 	"github.com/chenquan/hit/internal/consistenthash"
 	"github.com/chenquan/hit/internal/consts"
 	"github.com/chenquan/hit/internal/logging"
@@ -38,11 +38,11 @@ type Config struct {
 }
 
 type Client struct {
-	client *clientv3.Client        // etcd客户端
-	peers  *consistenthash.Map     // 存储哈希一致性数据
-	nodes  map[string]client.Nodor // key 节点名称,节点结构体
-	lock   sync.RWMutex            // 锁,用于
-	wg     sync.WaitGroup          // 锁,用于关闭etcd client
+	client *clientv3.Client         // etcd客户端
+	peers  *consistenthash.Map      // 存储哈希一致性数据
+	nodes  map[string]backend.Nodor // key 节点名称,节点结构体
+	lock   sync.RWMutex             // 锁,用于
+	wg     sync.WaitGroup           // 锁,用于关闭etcd client
 }
 
 func NewClient(path string) *Client {
@@ -65,7 +65,7 @@ func NewClient(path string) *Client {
 		os.Exit(0)
 	}
 
-	return &Client{client: cli, nodes: make(map[string]client.Nodor), peers: consistenthash.New(config.Replicas, nil)}
+	return &Client{client: cli, nodes: make(map[string]backend.Nodor), peers: consistenthash.New(config.Replicas, nil)}
 }
 
 // PullAllNodes 拉取所有节点
@@ -80,7 +80,7 @@ func (c *Client) PullNodes(prefix string) ([]string, error) {
 	c.wg.Add(1)
 	defer c.wg.Done()
 
-	prefix = consts.DefaultPath + prefix
+	prefix = consts.DefaultEctdPath + prefix
 	response, err := c.client.Get(context.Background(), prefix, clientv3.WithPrefix())
 	if err != nil {
 		return nil, err
@@ -136,8 +136,8 @@ func (c *Client) putNode(name string, addr string) {
 	defer c.wg.Done()
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	c.nodes[name] = client.NewNode(addr)
+	addr = addr + consts.DefaultBasePath
+	c.nodes[name] = NewNode(addr)
 	c.peers.Add(name)
 	logging.LogAction("PUT", fmt.Sprintf("Node name:%s, addr:%s", name, addr))
 }
@@ -159,7 +159,7 @@ func (c *Client) delNode(name string) {
 }
 
 // GetLocalAllNodes 获取当前本地所以节点
-func (c *Client) GetLocalAllNodes() map[string]client.Nodor {
+func (c *Client) GetLocalAllNodes() map[string]backend.Nodor {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.nodes
@@ -171,7 +171,7 @@ func (c *Client) Log(format string, v ...interface{}) {
 }
 
 // PickNode 为当前key选取一个合适的远程节点
-func (c *Client) PickNode(key string) (client.Nodor, bool) {
+func (c *Client) PickNode(key string) (backend.Nodor, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	// 获取一个合适的节点

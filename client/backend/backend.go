@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 // 客户端
-package client
+package backend
 
 import (
 	pb "github.com/chenquan/hit/internal/remotecache"

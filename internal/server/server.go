@@ -18,7 +18,6 @@ package server
 
 import (
 	"fmt"
-	"github.com/chenquan/hit/client/etcd"
 	"github.com/chenquan/hit/internal/cache"
 	cachebackend "github.com/chenquan/hit/internal/cache/backend/cache"
 	"github.com/chenquan/hit/internal/cache/lru"
@@ -45,9 +44,7 @@ var (
 )
 
 func NewGroupDefault(name string, cacheBytes int64) *Group {
-	group := NewGroup(name, cache.NewSyncCacheDefault(cacheBytes))
-
-	return group
+	return NewGroup(name, cache.NewSyncCacheDefault(cacheBytes))
 }
 
 func NewGroup(name string, mainCache *cache.SyncCache) *Group {
@@ -58,14 +55,6 @@ func NewGroup(name string, mainCache *cache.SyncCache) *Group {
 		name:      name,
 		mainCache: mainCache,
 	}
-	client := etcd.NewClient("")
-	nodes, err := client.PullNodes(name)
-	if err != nil {
-		log.Println()
-	} else {
-		log.Println("获取到初始节点:", nodes)
-	}
-
 	groups[name] = g
 	return g
 }
@@ -73,8 +62,8 @@ func NewGroup(name string, mainCache *cache.SyncCache) *Group {
 func GetGroup(name string) *Group {
 	mu.RLock()
 	defer mu.RUnlock()
-	g := groups[name]
-	return g
+	return groups[name]
+
 }
 
 // Get 通过key获取value
@@ -116,20 +105,17 @@ func (g *Group) populateCache(key string, value cachebackend.Valuer) {
 }
 
 type HTTPPool struct {
-	self      string
-	basePath  string
-	mainCache *cache.SyncCache
+	basePath string
 }
 
-func NewHTTPPool(self string) *HTTPPool {
+func NewHTTPPool() *HTTPPool {
 	return &HTTPPool{
-		self:     self,
 		basePath: consts.DefaultBasePath,
 	}
 }
 
 func (p *HTTPPool) Log(format string, v ...interface{}) {
-	log.Printf("[Hit] %s %s", p.self, fmt.Sprintf(format, v...))
+	log.Printf("[Hit] %s", fmt.Sprintf(format, v...))
 }
 
 func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +124,8 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	p.Log("%s %s", r.Method, r.URL.Path)
 	// /<basepath>/<groupname>/<key> required
-	parts := strings.SplitN(r.URL.Path[len(p.basePath):], "/", 2)
+	s := r.URL.Path[len(p.basePath)+1:]
+	parts := strings.SplitN(s, "/", 2)
 	if len(parts) != 2 {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
@@ -159,22 +146,24 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func get(groupName string, key string, w http.ResponseWriter, r *http.Request) {
-
-	if group, ok := groups[groupName]; ok {
-		valuer, err := group.Get(key)
-		if err == nil {
-			data := &pb.Data{
-				Group:  groupName,
-				Value:  valuer.Bytes(),
-				Expire: valuer.Expire(),
-			}
-			bytes, _ := proto.Marshal(&pb.GetResponse{Success: true, Message: "success", Data: data})
-			w.Header().Set("Content-Type", "application/octet-stream")
-			_, _ = w.Write(bytes)
-			return
-		}
+	group := GetGroup(groupName)
+	if group == nil {
+		group = NewGroupDefault(groupName, 1000)
 
 	}
+	valuer, err := group.Get(key)
+	if err == nil {
+		data := &pb.Data{
+			Group:  groupName,
+			Value:  valuer.Bytes(),
+			Expire: valuer.Expire(),
+		}
+		bytes, _ := proto.Marshal(&pb.GetResponse{Success: true, Message: "success", Data: data})
+		w.Header().Set("Content-Type", "application/octet-stream")
+		_, _ = w.Write(bytes)
+		return
+	}
+
 	bytes, _ := proto.Marshal(&pb.GetResponse{Success: false, Message: "fail"})
 	w.Header().Set("Content-Type", "application/octet-stream")
 	_, _ = w.Write(bytes)
@@ -185,10 +174,10 @@ func set(groupName string, key string, w http.ResponseWriter, r *http.Request) {
 	requestBody := &pb.SetRequest{}
 	err = proto.Unmarshal(bytesData, requestBody)
 	if err == nil {
-		var group *Group
-		var ok bool
-		if group, ok = groups[groupName]; !ok {
-			group = NewGroupDefault(groupName, 10000)
+		group := GetGroup(groupName)
+		if group == nil {
+			group = NewGroupDefault(groupName, 1000)
+
 		}
 		value := requestBody.Value
 		expire := time.Now().Add(consts.DefaultNodeCacheDuration).Unix()
@@ -200,7 +189,7 @@ func set(groupName string, key string, w http.ResponseWriter, r *http.Request) {
 				Value:  value,
 				Expire: expire,
 			}
-			bytes, _ := proto.Marshal(&pb.SetResponse{Success: false, Message: "success", Data: data})
+			bytes, _ := proto.Marshal(&pb.SetResponse{Success: true, Message: "success", Data: data})
 			w.Header().Set("Content-Type", "application/octet-stream")
 			_, _ = w.Write(bytes)
 			return
@@ -215,7 +204,8 @@ func set(groupName string, key string, w http.ResponseWriter, r *http.Request) {
 func del(groupName string, key string, w http.ResponseWriter, r *http.Request) {
 	message := "fail"
 	success := false
-	if group, ok := groups[groupName]; ok {
+	group := GetGroup(groupName)
+	if group != nil {
 		err := group.Delete(key)
 		if err != nil {
 		} else {
@@ -224,6 +214,7 @@ func del(groupName string, key string, w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+
 	bytes, _ := proto.Marshal(&pb.DelResponse{Success: success, Message: message})
 	w.Header().Set("Content-Type", "application/octet-stream")
 	_, _ = w.Write(bytes)

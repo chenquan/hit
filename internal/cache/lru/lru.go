@@ -18,6 +18,7 @@ package lru
 
 import (
 	"container/list"
+	"fmt"
 	"github.com/chenquan/hit/internal/cache/backend/cache"
 )
 
@@ -168,6 +169,11 @@ func (v *Value) SetExpire(timestamp int64) {
 }
 func (v *Value) GroupName() string {
 	return v.groupName
+}
+func (v *Value) String() string {
+
+	return fmt.Sprintf("{data:%s,expire:%d,groupName:%s}", v.data, v.expire, v.groupName)
+
 }
 
 // cloneBytes 克隆字节码

@@ -122,8 +122,8 @@ func (e *etcd) ListenLeaseRespChan() {
 }
 
 func (e *etcd) RegisterNode(name, addr string) error {
-	name = consts.DefaultPath + name
-	log.Println("注册:", name)
+	name = consts.DefaultEctdPath + name
+	log.Println("注册 name:", name, "addr:", addr)
 	kv := clientv3.NewKV(e.client)
 	_, err := kv.Put(context.TODO(), name, addr, clientv3.WithLease(e.leaseResp.ID))
 	return err

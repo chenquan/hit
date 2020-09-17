@@ -16,6 +16,15 @@
 
 package main
 
-func main() {
+import (
+	"github.com/chenquan/hit/internal/register"
+	"github.com/chenquan/hit/internal/server"
+	"net/http"
+)
 
+func main() {
+	register.Step("")
+	_ = register.Client.RegisterNode("localhost", "http://localhost:8080")
+	httpPool := server.NewHTTPPool()
+	_ = http.ListenAndServe(":8080", httpPool)
 }

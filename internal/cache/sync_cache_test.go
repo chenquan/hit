@@ -22,6 +22,14 @@ import (
 
 type String string
 
+func (s String) SetExpire(timestamp int64) {
+	panic("implement me")
+}
+
+func (s String) GroupName() string {
+	panic("implement me")
+}
+
 func (s String) Bytes() []byte {
 	return []byte(s)
 }
@@ -31,6 +39,9 @@ func (s String) Len() int {
 }
 func (s String) Expire() int64 {
 	return 0
+}
+func (s String) String() string {
+	return string(s)
 }
 
 func TestGet(t *testing.T) {

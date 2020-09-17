@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package client
+package etcd
 
 import (
 	"bytes"
@@ -43,8 +43,8 @@ func (h *Node) Set(in *pb.SetRequest, out *pb.SetResponse) error {
 		url.QueryEscape(in.GetGroup()),
 		url.QueryEscape(in.GetKey()),
 	)
-
-	res, err := http.Post(u, consts.ContentType, bytes.NewBuffer(in.GetValue()))
+	requestBytes, _ := proto.Marshal(in)
+	res, err := http.Post(u, consts.ContentType, bytes.NewBuffer(requestBytes))
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,11 @@ func (h *Node) Set(in *pb.SetRequest, out *pb.SetResponse) error {
 	if err = proto.Unmarshal(bytesData, out); err != nil {
 		return fmt.Errorf("decoding response body: %v", err)
 	}
-	return nil
+	if out.Success {
+		return nil
+	} else {
+		return fmt.Errorf("message: %s", out.Message)
+	}
 }
 
 // 从远程节点获取数据
@@ -70,8 +74,8 @@ func (h *Node) Get(in *pb.GetRequest, out *pb.GetResponse) error {
 	u := fmt.Sprintf(
 		"%v/%v/%v",
 		h.url,
-		url.QueryEscape(in.GetKey()),
 		url.QueryEscape(in.GetGroup()),
+		url.QueryEscape(in.GetKey()),
 	)
 	res, err := http.Get(u)
 	if err != nil {
@@ -90,7 +94,11 @@ func (h *Node) Get(in *pb.GetRequest, out *pb.GetResponse) error {
 	if err = proto.Unmarshal(bytesData, out); err != nil {
 		return fmt.Errorf("decoding response body: %v", err)
 	}
-	return nil
+	if out.Success {
+		return nil
+	} else {
+		return fmt.Errorf("message: %s", out.Message)
+	}
 }
 func (h *Node) Del(in *pb.DelRequest, out *pb.DelResponse) error {
 	u := fmt.Sprintf(

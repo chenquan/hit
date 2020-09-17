@@ -16,6 +16,8 @@
 
 package cache
 
+import "fmt"
+
 type Cache interface {
 	Add(key string, valuer Valuer)
 	Get(key string) (valuer Valuer, ok bool)
@@ -26,6 +28,7 @@ type Cache interface {
 
 //使用Len值计算需要多少字节
 type Valuer interface {
+	fmt.Stringer
 	Len() int
 	Bytes() []byte
 	Expire() int64
