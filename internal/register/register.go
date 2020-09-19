@@ -53,7 +53,7 @@ func New(config *Config) *Server {
 		fmt.Println("Error Open", etcdConfig.Endpoints, err)
 		os.Exit(0)
 	}
-	client := &Server{client: cli}
+	client := &Server{client: cli, name: config.NodeName}
 	if err := client.setLease(config.LeaseTtl); err != nil {
 		fmt.Println(err)
 		os.Exit(0)
@@ -68,7 +68,7 @@ type Server struct {
 	leaseResp     *clientv3.LeaseGrantResponse
 	canclefunc    func()
 	keepAliveChan <-chan *clientv3.LeaseKeepAliveResponse
-	key           string
+	name          string
 }
 
 //设置租约
@@ -99,10 +99,10 @@ func (e *Server) ListenLeaseRespChan() {
 		select {
 		case leaseKeepResp := <-e.keepAliveChan:
 			if leaseKeepResp == nil {
-				fmt.Println("已经关闭续租功能")
+				log.Println("已经关闭续租功能.")
 				return
 			} else {
-				fmt.Println("续租成功")
+				log.Printf("续租成功节点:%s.", e.name)
 			}
 		}
 	}

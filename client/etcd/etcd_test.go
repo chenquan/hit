@@ -21,19 +21,5 @@ import (
 )
 
 func TestStep(t *testing.T) {
-	//client := NewClient("")
-	//// 拉取指定节点
-	//if nodes, err := client.PullNodes("node/a"); err != nil {
-	//	fmt.Println(err)
-	//} else {
-	//	fmt.Println(nodes)
-	//}
-	//async.Repeat(context.Background(), time.Second*10, func() {
-	//	nodes := client.GetLocalAllNodes()
-	//
-	//	fmt.Println(nodes)
-	//})
-	//
-	//select {}
 
 }

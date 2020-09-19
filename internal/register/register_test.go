@@ -17,32 +17,9 @@
 package register
 
 import (
-	"context"
-	"github.com/chenquan/go-utils/async"
-	"log"
-	"math/rand"
-	"strconv"
 	"testing"
-	"time"
 )
 
 func TestStep(t *testing.T) {
-	Step("")
 
-	async.Repeat(context.Background(), time.Second*20, func() {
-		a := ""
-		if rand.Int()%2 == 0 {
-
-			a = "test/"
-		} else {
-			a = "b/"
-
-		}
-
-		err := Client.RegisterNode(a+strconv.Itoa(rand.Int()), "http://"+strconv.Itoa(rand.Int()))
-		if err != nil {
-			log.Println(err)
-		}
-	})
-	select {}
 }

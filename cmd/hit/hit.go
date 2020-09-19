@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/chenquan/hit/internal/consts"
 	"github.com/chenquan/hit/internal/register"
@@ -35,7 +36,9 @@ func main() {
 
 	// 注册节点
 	serverRegister := register.New(config)
-	_ = serverRegister.RegisterNode(config.NodeName, config.NodeAddr+":"+config.Port)
+	addr := fmt.Sprintf("%s://%s:%s", config.Protocol, config.NodeAddr, config.Port)
+
+	_ = serverRegister.RegisterNode(config.NodeName, addr)
 
 	switch config.Protocol {
 	case consts.ProtocolHTTP:
@@ -44,6 +47,7 @@ func main() {
 	}
 
 }
+
 func handleConfig(path string) *register.Config {
 	// 存储配置文件信息
 	var config register.Config

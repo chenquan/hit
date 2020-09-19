@@ -61,11 +61,11 @@ func NewHitFromPath(path string) *Hit {
 }
 
 // NewGroup create a new instance of Loader
-func (h *Hit) NewGroupDefault(name string, cacheBytes int64, getter Getter) *Group {
-	group := h.NewGroup(name, cache.NewSyncCacheDefault(cacheBytes), getter)
+func (h *Hit) NewGroupDefault(name, nodeName string, cacheBytes int64, getter Getter) *Group {
+	group := h.NewGroup(name, nodeName, cache.NewSyncCacheDefault(cacheBytes), getter)
 	return group
 }
-func (h *Hit) NewGroup(name string, mainCache *cache.SyncCache, getter Getter) *Group {
+func (h *Hit) NewGroup(name, nodeName string, mainCache *cache.SyncCache, getter Getter) *Group {
 	if getter == nil {
 		panic("nil Getter")
 	}
@@ -77,7 +77,7 @@ func (h *Hit) NewGroup(name string, mainCache *cache.SyncCache, getter Getter) *
 		mainCache: mainCache,
 		loader:    &utils.Loader{},
 	}
-	nodes, err := h.client.PullNodes(name)
+	nodes, err := h.client.PullNodes(nodeName)
 	if err != nil {
 		log.Println()
 	} else {

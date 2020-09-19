@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/apache/thrift v0.13.0 // indirect
 	github.com/chenquan/go-utils v0.0.3-0.20200907114004-bf94f6b92c17
 	github.com/coreos/etcd v3.3.22+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect

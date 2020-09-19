@@ -23,6 +23,7 @@ import (
 	"github.com/chenquan/hit/client/hit"
 	"github.com/chenquan/hit/internal/cache/lru"
 	"math/rand"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -32,7 +33,7 @@ var hitClient *Hit
 
 func init() {
 	config := &hit.Config{
-		Endpoints: []string{"101.132.38.180:2379"},
+		Endpoints: []string{"localhost:2379"},
 		Replicas:  3,
 	}
 	hitClient = NewHit(config)
@@ -43,7 +44,7 @@ func BenchmarkSetAndLocal(b *testing.B) {
 		return []byte("not found"), nil
 	}
 
-	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
+	groupDefault := hitClient.NewGroupDefault("node1", "", 1000, f)
 	rand.Seed(time.Now().Unix())
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -59,7 +60,8 @@ func BenchmarkSet(b *testing.B) {
 
 		return []byte("not found"), nil
 	}
-	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
+	groupDefault := hitClient.NewGroupDefault("groupName1", "", 1000, f)
+
 	rand.Seed(time.Now().Unix())
 
 	b.ReportAllocs()
@@ -75,7 +77,8 @@ func BenchmarkSetAndGet(b *testing.B) {
 
 		return []byte("not found"), nil
 	}
-	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
+	groupDefault := hitClient.NewGroupDefault("groupName1", "", 1000, f)
+
 	rand.Seed(time.Now().Unix())
 
 	b.ReportAllocs()
@@ -92,15 +95,22 @@ func TestClient(t *testing.T) {
 
 		return []byte("not found"), nil
 	}
-	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
+	groupDefault := hitClient.NewGroupDefault("groupName1", "", 1000, f)
 
 	async.Repeat(context.Background(), time.Second*1, func() {
 		rand.Seed(time.Now().Unix())
 		index := strconv.Itoa(rand.Int())
-		groupDefault.Set("chenquan"+index, lru.NewValue([]byte("data"), time.Now().Add(time.Minute).Unix(), "test"+strconv.Itoa(rand.Int())), false)
+
+		data := []byte("data" + index)
+		newValue := lru.NewValue(data, time.Now().Add(time.Minute).Unix(), "groupName1")
+		groupDefault.Set("chenquan"+index, newValue, false)
 		value, err := groupDefault.Get("chenquan" + index)
 		if err == nil {
+			fmt.Println("原始数据", newValue.String())
 			fmt.Println("获取数据", value.String())
+			if !reflect.DeepEqual(value, newValue) {
+				panic("数据不相等")
+			}
 		} else {
 			fmt.Println(err)
 		}
