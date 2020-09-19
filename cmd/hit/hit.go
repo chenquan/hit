@@ -30,7 +30,7 @@ import (
 
 func main() {
 	var path string
-	flag.StringVar(&path, "addr", "hit.toml", "配置文件地址")
+	flag.StringVar(&path, "path", "hit.toml", "配置文件地址")
 	flag.Parse()
 	config := handleConfig(path)
 

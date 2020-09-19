@@ -33,7 +33,7 @@ var hitClient *Hit
 
 func init() {
 	config := &hit.Config{
-		Endpoints: []string{"localhost:2379"},
+		Endpoints: []string{"101.132.38.180:2379"},
 		Replicas:  3,
 	}
 	hitClient = NewHit(config)
