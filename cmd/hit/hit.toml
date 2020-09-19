@@ -1,0 +1,7 @@
+Endpoints=["101.132.38.180:2379"]
+LeaseTtl=10
+DialTimeout=5
+NodeAddr="localhost"
+NodeName="node1"
+Protocol="http"
+Port="2020"
