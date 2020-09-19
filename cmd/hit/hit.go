@@ -17,14 +17,64 @@
 package main
 
 import (
+	"flag"
+	"github.com/BurntSushi/toml"
+	"github.com/chenquan/hit/internal/consts"
 	"github.com/chenquan/hit/internal/register"
 	"github.com/chenquan/hit/internal/server"
+	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
-	register.Step("")
-	_ = register.Client.RegisterNode("localhost", "http://localhost:8080")
-	httpPool := server.NewHTTPPool()
-	_ = http.ListenAndServe(":8080", httpPool)
+	var path string
+	flag.StringVar(&path, "addr", "hit.toml", "配置文件地址")
+	flag.Parse()
+	config := handleConfig(path)
+
+	// 注册节点
+	serverRegister := register.New(config)
+	_ = serverRegister.RegisterNode(config.NodeName, config.NodeAddr+":"+config.Port)
+
+	switch config.Protocol {
+	case consts.ProtocolHTTP:
+		httpPool := server.NewHTTPPool()
+		_ = http.ListenAndServe(":"+config.Port, httpPool)
+	}
+
+}
+func handleConfig(path string) *register.Config {
+	// 存储配置文件信息
+	var config register.Config
+	if _, err := toml.DecodeFile(path, &config); err != nil {
+		log.Println(err)
+		os.Exit(0)
+	}
+	if config.Endpoints == nil || len(config.Endpoints) == 0 {
+		log.Println("Endpoints 不能为空")
+		os.Exit(0)
+	}
+	if config.NodeAddr == "" {
+		log.Println("NodeAddr 不能为空")
+		os.Exit(0)
+	}
+	if config.NodeName == "" {
+		log.Println("NodeName 不能为空")
+		os.Exit(0)
+	}
+	// 配置信息处理
+	if config.Port == "" {
+		config.Port = consts.DefaultPost
+	}
+	if config.Protocol == "" {
+		config.Protocol = consts.ProtocolHTTP
+	}
+	if config.LeaseTtl == 0 {
+		config.LeaseTtl = 10
+	}
+	if config.DialTimeout == 0 {
+		config.DialTimeout = 5
+	}
+	return &config
 }

@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/chenquan/hit/internal/register"
 	"github.com/chenquan/hit/internal/server"
 	"net/http"
@@ -39,10 +40,10 @@ func (t *Atest) SetName(value string) {
 }
 
 func Test1(t *testing.T) {
-
-	register.Step("")
-	_ = register.Client.RegisterNode("node1/localhost", "http://localhost:8080")
+	config := handleConfig("hit.toml")
+	addr := fmt.Sprintf("%s://%s:%s", config.Protocol, config.NodeAddr, config.Port)
+	_ = register.New(config).RegisterNode(config.NodeName, addr)
 	httpPool := server.NewHTTPPool()
-	_ = http.ListenAndServe(":8080", httpPool)
+	_ = http.ListenAndServe(":"+config.Port, httpPool)
 
 }

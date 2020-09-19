@@ -18,19 +18,82 @@ package client
 
 import (
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/chenquan/hit/client/backend"
 	"github.com/chenquan/hit/client/etcd"
+	"github.com/chenquan/hit/client/hit"
 	"github.com/chenquan/hit/internal/cache"
 	cachebackend "github.com/chenquan/hit/internal/cache/backend/cache"
 	"github.com/chenquan/hit/internal/cache/lru"
 	"github.com/chenquan/hit/internal/consts"
 	pb "github.com/chenquan/hit/internal/remotecache"
 	"github.com/chenquan/hit/internal/utils"
+	"os"
 	"time"
 
 	"log"
 	"sync"
 )
+
+type Hit struct {
+	client *etcd.Client
+	groups map[string]*Group
+	rwLock sync.RWMutex
+}
+
+func NewHit(config *hit.Config) *Hit {
+	return &Hit{
+		client: etcd.NewClient(config),
+		groups: make(map[string]*Group),
+	}
+}
+func NewHitFromPath(path string) *Hit {
+
+	var config hit.Config
+	if path == "" {
+		path = "hit.toml"
+	}
+	if _, err := toml.DecodeFile(path, &config); err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
+	return NewHit(&config)
+}
+
+// NewGroup create a new instance of Loader
+func (h *Hit) NewGroupDefault(name string, cacheBytes int64, getter Getter) *Group {
+	group := h.NewGroup(name, cache.NewSyncCacheDefault(cacheBytes), getter)
+	return group
+}
+func (h *Hit) NewGroup(name string, mainCache *cache.SyncCache, getter Getter) *Group {
+	if getter == nil {
+		panic("nil Getter")
+	}
+	h.rwLock.Lock()
+	defer h.rwLock.Unlock()
+	g := &Group{
+		name:      name,
+		getter:    getter,
+		mainCache: mainCache,
+		loader:    &utils.Loader{},
+	}
+	nodes, err := h.client.PullNodes(name)
+	if err != nil {
+		log.Println()
+	} else {
+		log.Println("获取到初始节点:", nodes)
+	}
+	g.registerPeers(h.client)
+	h.groups[name] = g
+	return g
+}
+
+func (h *Hit) GetGroup(name string) *Group {
+	h.rwLock.RLock()
+	defer h.rwLock.RUnlock()
+	g := h.groups[name]
+	return g
+}
 
 type Group struct {
 	name      string
@@ -53,48 +116,6 @@ func (f GetterFunc) Get(key string) ([]byte, error) {
 	return f(key)
 }
 
-var (
-	mu     sync.RWMutex
-	groups = make(map[string]*Group)
-)
-
-// NewGroup create a new instance of Loader
-func NewGroupDefault(name string, cacheBytes int64, getter Getter) *Group {
-	group := NewGroup(name, cache.NewSyncCacheDefault(cacheBytes), getter)
-
-	return group
-}
-
-func NewGroup(name string, mainCache *cache.SyncCache, getter Getter) *Group {
-	if getter == nil {
-		panic("nil Getter")
-	}
-	mu.Lock()
-	defer mu.Unlock()
-	g := &Group{
-		name:      name,
-		getter:    getter,
-		mainCache: mainCache,
-		loader:    &utils.Loader{},
-	}
-	client := etcd.NewClient("")
-	nodes, err := client.PullNodes(name)
-	if err != nil {
-		log.Println()
-	} else {
-		log.Println("获取到初始节点:", nodes)
-	}
-	g.registerPeers(client)
-	groups[name] = g
-	return g
-}
-
-func GetGroup(name string) *Group {
-	mu.RLock()
-	g := groups[name]
-	mu.RUnlock()
-	return g
-}
 func (g *Group) registerPeers(nodes backend.NodePicker) {
 	if g.nodes != nil {
 		panic("RegisterPeerPicker called more than once")

@@ -19,8 +19,8 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"github.com/chenquan/hit/client/backend"
+	"github.com/chenquan/hit/client/hit"
 	"github.com/chenquan/hit/internal/consistenthash"
 	"github.com/chenquan/hit/internal/consts"
 	"github.com/chenquan/hit/internal/logging"
@@ -32,10 +32,11 @@ import (
 	"sync"
 )
 
-type Config struct {
-	Endpoints []string `json:"endpoints"` // etcd服务节点
-	Replicas  int      `json:"replicas"`  // 虚拟节点个数
-}
+//
+//type Config struct {
+//	Endpoints []string `json:"endpoints"` // etcd服务节点
+//	Replicas  int      `json:"replicas"`  // 虚拟节点个数
+//}
 
 type Client struct {
 	client *clientv3.Client         // etcd客户端
@@ -45,16 +46,16 @@ type Client struct {
 	wg     sync.WaitGroup           // 锁,用于关闭etcd client
 }
 
-func NewClient(path string) *Client {
+func NewClient(config *hit.Config) *Client {
 
-	var config Config
-	if path == "" {
-		path = "etcd.toml"
-	}
-	if _, err := toml.DecodeFile(path, &config); err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
+	//var config Config
+	//if path == "" {
+	//	path = "hit.toml"
+	//}
+	//if _, err := toml.DecodeFile(path, &config); err != nil {
+	//	fmt.Println(err)
+	//	os.Exit(0)
+	//}
 	var etcdConfig = clientv3.Config{
 		Endpoints: config.Endpoints,
 	}

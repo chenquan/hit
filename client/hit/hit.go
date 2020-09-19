@@ -14,23 +14,9 @@
  *    limitations under the License.
  */
 
-package consts
+package hit
 
-import "time"
-
-// 默认路径
-const (
-	DefaultEctdPath           = "hit/"
-	ContentType               = "application/octet-stream"
-	DefaultLocalCacheDuration = time.Second * 10 // 默认本地缓存时长
-	DefaultNodeCacheDuration  = time.Second * 60 // 默认节点缓存时长
-	DefaultBasePath           = "/hit"           // 默认基础URL路径
-	DefaultPost               = "2020"           // 默认端口
-)
-
-// 协议
-const (
-	ProtocolHTTP        = "http"
-	ProtocolHTTPS       = "https"
-	ProtocolDefaultHTTP = ProtocolHTTP
-)
+type Config struct {
+	Endpoints []string `json:"endpoints"` // etcd服务节点
+	Replicas  int      `json:"replicas"`  // 虚拟节点个数
+}

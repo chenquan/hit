@@ -1,11 +1,15 @@
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/Etcd-io/Etcd v3.3.22+incompatible h1:ayJlfSTpAcyHTe6GocVf9JmSv1UqRhmsWpiA3MvbSI4=
+github.com/Etcd-io/Etcd v3.3.22+incompatible/go.mod h1:cdZ77EstHBwVtD6iTgzgvogwcjo9m4iOqoijouPJ4bs=
 github.com/apache/thrift v0.13.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chenquan/go-utils v0.0.2 h1:hoyuMPHRoT4RCZXZ3dhasjUIOtDNXSLUADp5ACgRBiU=
 github.com/chenquan/go-utils v0.0.2/go.mod h1:5CQFIxpZIQamdVa3pVTL9fpP3T0njFxTObKg8n7GRDI=
 github.com/chenquan/go-utils v0.0.3-0.20200907114004-bf94f6b92c17 h1:Z/C8aUNxspGS8kcVtbJbOKWMlcaPNSXdUHO+YE9j1Xc=
 github.com/chenquan/go-utils v0.0.3-0.20200907114004-bf94f6b92c17/go.mod h1:5CQFIxpZIQamdVa3pVTL9fpP3T0njFxTObKg8n7GRDI=
+github.com/coreos/Etcd v3.3.22+incompatible h1:AnRMUyVdVvh1k7lHe61YEd227+CLoNogQuAypztGSK4=
+github.com/coreos/Etcd v3.3.22+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/etcd v3.3.22+incompatible h1:AnRMUyVdVvh1k7lHe61YEd227+CLoNogQuAypztGSK4=
 github.com/coreos/etcd v3.3.22+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-semver v0.3.0 h1:wkHLiw0WNATZnSG7epLsujiMCgPAc9xhjJ4tgnAxmfM=

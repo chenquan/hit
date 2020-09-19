@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/chenquan/go-utils/async"
+	"github.com/chenquan/hit/client/hit"
 	"github.com/chenquan/hit/internal/cache/lru"
 	"math/rand"
 	"strconv"
@@ -27,12 +28,22 @@ import (
 	"time"
 )
 
+var hitClient *Hit
+
+func init() {
+	config := &hit.Config{
+		Endpoints: []string{"101.132.38.180:2379"},
+		Replicas:  3,
+	}
+	hitClient = NewHit(config)
+}
 func BenchmarkSetAndLocal(b *testing.B) {
 	var f GetterFunc = func(string2 string) ([]byte, error) {
 
 		return []byte("not found"), nil
 	}
-	groupDefault := NewGroupDefault("node1", 1000, f)
+
+	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
 	rand.Seed(time.Now().Unix())
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -48,15 +59,31 @@ func BenchmarkSet(b *testing.B) {
 
 		return []byte("not found"), nil
 	}
-	groupDefault := NewGroupDefault("node1", 1000, f)
+	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
+	rand.Seed(time.Now().Unix())
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		rand.Seed(time.Now().Unix())
 		index := strconv.Itoa(rand.Int())
 		_, _ = groupDefault.Set("chenquan"+index, lru.NewValue([]byte("data"), time.Now().Add(time.Minute).Unix(), "test"+strconv.Itoa(rand.Int())), false)
 		//_, _ = groupDefault.Get("chenquan" + index)
+	}
+}
+func BenchmarkSetAndGet(b *testing.B) {
+	var f GetterFunc = func(string2 string) ([]byte, error) {
+
+		return []byte("not found"), nil
+	}
+	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
+	rand.Seed(time.Now().Unix())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		index := strconv.Itoa(rand.Int())
+		_, _ = groupDefault.Set("chenquan"+index, lru.NewValue([]byte("data"), time.Now().Add(time.Minute).Unix(), "test"+strconv.Itoa(rand.Int())), false)
+		_, _ = groupDefault.Get("chenquan" + index)
 	}
 }
 
@@ -65,9 +92,9 @@ func TestClient(t *testing.T) {
 
 		return []byte("not found"), nil
 	}
-	groupDefault := NewGroupDefault("node1", 1000, f)
+	groupDefault := hitClient.NewGroupDefault("node1", 1000, f)
 
-	async.Repeat(context.Background(), time.Second*6, func() {
+	async.Repeat(context.Background(), time.Second*1, func() {
 		rand.Seed(time.Now().Unix())
 		index := strconv.Itoa(rand.Int())
 		groupDefault.Set("chenquan"+index, lru.NewValue([]byte("data"), time.Now().Add(time.Minute).Unix(), "test"+strconv.Itoa(rand.Int())), false)
