@@ -1,0 +1,41 @@
+version: "3.0"
+services:
+  node1:
+    container_name: hit-node1
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    hostname: hit-node1
+    ports:
+      - 2021:2021
+    environment:
+      - HIT_CONFIG_PATH=shell/hit-1.toml
+    networks:
+      - hit_net
+  node2:
+    container_name: hit-node2
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    hostname: hit-node2
+    ports:
+      - 2022:2022
+    environment:
+      - HIT_CONFIG_PATH=shell/hit-2.toml
+    networks:
+      - hit_net
+  node3:
+    container_name: hit-node3
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    hostname: hit-node3
+    ports:
+      - 2023:2023
+    environment:
+      - HIT_CONFIG_PATH=shell/hit-3.toml
+    networks:
+      - hit_net
+networks:
+  hit_net:
+    driver: bridge

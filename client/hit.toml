@@ -1,0 +1,3 @@
+Endpoints = ["localhost:2379"]
+Replicas = 10
+#DialTimeout=5

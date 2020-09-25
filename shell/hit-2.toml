@@ -1,0 +1,7 @@
+Endpoints = ["localhost:2379"]
+LeaseTtl = 10
+DialTimeout = 5
+NodeAddr = "localhost"
+NodeName = "hit-node2"
+Protocol = "http"
+Port = "2022"
